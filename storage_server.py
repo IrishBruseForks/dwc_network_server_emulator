@@ -49,6 +49,7 @@ def escape_xml(s):
 
 
 class StorageServer(object):
+
     def start(self):
         httpd = StorageHTTPServer((address[0], address[1]), StorageHTTPServerHandler)
         logger.log(logging.INFO, "Now listening for connections on %s:%d...", address[0], address[1])
@@ -56,6 +57,7 @@ class StorageServer(object):
 
 
 class StorageHTTPServer(http.server.HTTPServer):
+
     def __init__(self, server_address, RequestHandlerClass):
         http.server.HTTPServer.__init__(self, server_address, RequestHandlerClass)
 
@@ -75,131 +77,61 @@ class StorageHTTPServer(http.server.HTTPServer):
 
         PK = 'INTEGER PRIMARY KEY AUTOINCREMENT'
 
-        self.create_or_alter_table_if_not_exists(
-            'g1443_bbdx_player',
-            ['recordid', 'stat'],
-            [PK,         'INT'],
-            ['int',      'int'])
-        self.create_or_alter_table_if_not_exists(
-            'g1443_bbdx_info',
-            ['serialid', 'stat', 'message'],
-            ['INT',      'INT',  'TEXT'],
-            ['int',      'int',  'unicodeString'])
-        self.create_or_alter_table_if_not_exists(
-            'g1443_bbdx_search',
-            ['recordid', 'song_name',   'creator_name', 'average_rating', 'serialid', 'filestore', 'is_lyric', 'num_ratings', 'jasrac_code', 'artist_name'],
-            [PK,         'TEXT',        'TEXT',         'REAL',           'INT',      'INT',       'INT',      'INT',         'TEXT',        'TEXT'],
-            ['int',      'asciiString', 'asciiString',  'float',          'int',      'int',       'boolean',  'int',         'asciiString', 'asciiString'])
+        self.create_or_alter_table_if_not_exists('g1443_bbdx_player', ['recordid', 'stat'], [PK, 'INT'], ['int', 'int'])
+        self.create_or_alter_table_if_not_exists('g1443_bbdx_info', ['serialid', 'stat', 'message'], ['INT', 'INT', 'TEXT'], ['int', 'int', 'unicodeString'])
+        self.create_or_alter_table_if_not_exists('g1443_bbdx_search', ['recordid', 'song_name', 'creator_name', 'average_rating', 'serialid', 'filestore', 'is_lyric', 'num_ratings', 'jasrac_code', 'artist_name'],
+                                                 [PK, 'TEXT', 'TEXT', 'REAL', 'INT', 'INT', 'INT', 'INT', 'TEXT', 'TEXT'], ['int', 'asciiString', 'asciiString', 'float', 'int', 'int', 'boolean', 'int', 'asciiString', 'asciiString'])
 
         # Mario Kart Wii
-        self.create_or_alter_table_if_not_exists(
-            'g1687_FriendInfo',
-            ['recordid', 'ownerid', 'info'],
-            [PK,         'INT',     'TEXT'],
-            ['int',      'int',     'binaryData'])
+        self.create_or_alter_table_if_not_exists('g1687_FriendInfo', ['recordid', 'ownerid', 'info'], [PK, 'INT', 'TEXT'], ['int', 'int', 'binaryData'])
 
-        self.create_or_alter_table_if_not_exists(
-            'g1687_StoredGhostData',
-            ['recordid', 'fileid', 'profile', 'region', 'gameid', 'course'],
-            [PK,         'INT',    'INT',     'INT',    'INT',    'INT'],
-            ['int',      'int',    'int',     'int',    'int',    'int'])
+        self.create_or_alter_table_if_not_exists('g1687_StoredGhostData', ['recordid', 'fileid', 'profile', 'region', 'gameid', 'course'], [PK, 'INT', 'INT', 'INT', 'INT', 'INT'], ['int', 'int', 'int', 'int', 'int', 'int'])
 
         # WarioWare DIY
-        self.create_or_alter_table_if_not_exists(
-            'g2050_contest',
-            ['recordid', 'ownerid', 'm_no', 'm_file_id'],
-            [PK,         'INT',     'INT',  'INT'],
-            ['int',      'int',     'int',  'int'])
-        self.create_or_alter_table_if_not_exists(
-            'g2050_contest_eu',
-            ['recordid', 'ownerid', 'm_no', 'm_file_id'],
-            [PK,         'INT',     'INT',  'INT'],
-            ['int',      'int',     'int',  'int'])
-        self.create_or_alter_table_if_not_exists(
-            'g2050_contest_us',
-            ['recordid', 'ownerid', 'm_no', 'm_file_id'],
-            [PK,         'INT',     'INT',  'INT'],
-            ['int',      'int',     'int',  'int'])
-        self.create_or_alter_table_if_not_exists(
-            'g2050_box',
-            ['recordid', 'ownerid', 'm_enable', 'm_type', 'm_index', 'm_file_id', 'm_header',   'm_file_id___size', 'm_file_id___create_time', 'm_file_id___downloads'],
-            [PK,         'INT',     'INT',      'INT',    'INT',     'INT',       'TEXT',       'INT',              'DATETIME',                'INT'],
-            ['int',      'int',     'boolean',  'int',    'int',     'int',       'binaryData', 'int',              'dateAndTime',             'int'])
-        cursor.execute('CREATE TRIGGER IF NOT EXISTS g2050ti_box AFTER INSERT ON g2050_box BEGIN UPDATE g2050_box SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\'), m_file_id___size = 0, m_file_id___downloads = 0 WHERE recordid = NEW.recordid; END')
+        self.create_or_alter_table_if_not_exists('g2050_contest', ['recordid', 'ownerid', 'm_no', 'm_file_id'], [PK, 'INT', 'INT', 'INT'], ['int', 'int', 'int', 'int'])
+        self.create_or_alter_table_if_not_exists('g2050_contest_eu', ['recordid', 'ownerid', 'm_no', 'm_file_id'], [PK, 'INT', 'INT', 'INT'], ['int', 'int', 'int', 'int'])
+        self.create_or_alter_table_if_not_exists('g2050_contest_us', ['recordid', 'ownerid', 'm_no', 'm_file_id'], [PK, 'INT', 'INT', 'INT'], ['int', 'int', 'int', 'int'])
+        self.create_or_alter_table_if_not_exists('g2050_box', ['recordid', 'ownerid', 'm_enable', 'm_type', 'm_index', 'm_file_id', 'm_header', 'm_file_id___size', 'm_file_id___create_time', 'm_file_id___downloads'],
+                                                 [PK, 'INT', 'INT', 'INT', 'INT', 'INT', 'TEXT', 'INT', 'DATETIME', 'INT'], ['int', 'int', 'boolean', 'int', 'int', 'int', 'binaryData', 'int', 'dateAndTime', 'int'])
+        cursor.execute(
+            'CREATE TRIGGER IF NOT EXISTS g2050ti_box AFTER INSERT ON g2050_box BEGIN UPDATE g2050_box SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\'), m_file_id___size = 0, m_file_id___downloads = 0 WHERE recordid = NEW.recordid; END'
+        )
         cursor.execute('CREATE TRIGGER IF NOT EXISTS g2050tu_box AFTER UPDATE ON g2050_box BEGIN UPDATE g2050_box SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\') WHERE recordid = NEW.recordid; END')
-        self.create_or_alter_table_if_not_exists(
-            'g2050_box_us_eu',
-            ['recordid', 'ownerid', 'm_enable', 'm_type', 'm_index', 'm_file_id', 'm_header',   'm_file_id___size', 'm_file_id___create_time', 'm_file_id___downloads'],
-            [PK,         'INT',     'INT',      'INT',    'INT',     'INT',       'TEXT',       'INT',              'DATETIME',                'INT'],
-            ['int',      'int',     'boolean',  'int',    'int',     'int',       'binaryData', 'int',              'dateAndTime',             'int'])
-        cursor.execute('CREATE TRIGGER IF NOT EXISTS g2050ti_box_us_eu AFTER INSERT ON g2050_box_us_eu BEGIN UPDATE g2050_box_us_eu SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\'), m_file_id___size = 0, m_file_id___downloads = 0 WHERE recordid = NEW.recordid; END')
+        self.create_or_alter_table_if_not_exists('g2050_box_us_eu', ['recordid', 'ownerid', 'm_enable', 'm_type', 'm_index', 'm_file_id', 'm_header', 'm_file_id___size', 'm_file_id___create_time', 'm_file_id___downloads'],
+                                                 [PK, 'INT', 'INT', 'INT', 'INT', 'INT', 'TEXT', 'INT', 'DATETIME', 'INT'], ['int', 'int', 'boolean', 'int', 'int', 'int', 'binaryData', 'int', 'dateAndTime', 'int'])
+        cursor.execute(
+            'CREATE TRIGGER IF NOT EXISTS g2050ti_box_us_eu AFTER INSERT ON g2050_box_us_eu BEGIN UPDATE g2050_box_us_eu SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\'), m_file_id___size = 0, m_file_id___downloads = 0 WHERE recordid = NEW.recordid; END'
+        )
         cursor.execute('CREATE TRIGGER IF NOT EXISTS g2050tu_box_us_eu AFTER UPDATE ON g2050_box_us_eu BEGIN UPDATE g2050_box_us_eu SET m_file_id___create_time = strftime(\'%Y-%m-%dT%H:%M:%f\', \'now\') WHERE recordid = NEW.recordid; END')
 
-        self.create_or_alter_table_if_not_exists(
-            'g2649_bbdx_player',
-            ['recordid', 'stat'],
-            [PK,         'INT'],
-            ['int',      'int'])
-        self.create_or_alter_table_if_not_exists(
-            'g2649_bbdx_info',
-            ['serialid', 'stat', 'message'],
-            ['INT',      'INT',  'TEXT'],
-            ['int',      'int',  'unicodeString'])
-        self.create_or_alter_table_if_not_exists(
-            'g2649_bbdx_search',
-            ['recordid', 'song_name',   'creator_name', 'average_rating', 'serialid', 'filestore', 'is_lyric', 'num_ratings', 'song_code',   'artist_name'],
-            [PK,         'TEXT',        'TEXT',         'REAL',           'INT',      'INT',       'INT',      'INT',         'TEXT',        'TEXT'],
-            ['int',      'asciiString', 'asciiString',  'float',          'int',      'int',       'boolean',  'int',         'asciiString', 'asciiString'])
+        self.create_or_alter_table_if_not_exists('g2649_bbdx_player', ['recordid', 'stat'], [PK, 'INT'], ['int', 'int'])
+        self.create_or_alter_table_if_not_exists('g2649_bbdx_info', ['serialid', 'stat', 'message'], ['INT', 'INT', 'TEXT'], ['int', 'int', 'unicodeString'])
+        self.create_or_alter_table_if_not_exists('g2649_bbdx_search', ['recordid', 'song_name', 'creator_name', 'average_rating', 'serialid', 'filestore', 'is_lyric', 'num_ratings', 'song_code', 'artist_name'],
+                                                 [PK, 'TEXT', 'TEXT', 'REAL', 'INT', 'INT', 'INT', 'INT', 'TEXT', 'TEXT'], ['int', 'asciiString', 'asciiString', 'float', 'int', 'int', 'boolean', 'int', 'asciiString', 'asciiString'])
 
         # Playground
-        self.create_or_alter_table_if_not_exists(
-            'g2999_tblRegionInfo',
-            ['recordid', 'region', 'allowed_regions', 'min_ratings'],
-            [PK,         'INT',    'INT',             'INT'],
-            ['int',      'byte',   'int',             'int'])
+        self.create_or_alter_table_if_not_exists('g2999_tblRegionInfo', ['recordid', 'region', 'allowed_regions', 'min_ratings'], [PK, 'INT', 'INT', 'INT'], ['int', 'byte', 'int', 'int'])
 
         # Super Smash Bros. Brawl
-        self.create_or_alter_table_if_not_exists(
-            'g1658_submit',
-            ['recordid', 'ownerid', 'data'],
-            [PK,         'INT',     'INT'],
-            ['int',      'int',     'int']
-        )
-        self.create_or_alter_table_if_not_exists(
-            'g1658_watching',
-            ['recordid', 'ownerid', 'data'],
-            [PK,         'INT',     'INT'],
-            ['int',      'int',     'int']
-        )
+        self.create_or_alter_table_if_not_exists('g1658_submit', ['recordid', 'ownerid', 'data'], [PK, 'INT', 'INT'], ['int', 'int', 'int'])
+        self.create_or_alter_table_if_not_exists('g1658_watching', ['recordid', 'ownerid', 'data'], [PK, 'INT', 'INT'], ['int', 'int', 'int'])
 
         # Trackmania Wii
-        self.create_or_alter_table_if_not_exists(
-            'g2793_player',
-            ['recordid', 'ownerid', 'ladder', 'avatar', 'mii', 'name',        'wins', 'loses', 'count', 'row'],
-            [PK,         'INT',     'INT',    'INT',    'INT', 'TEXT',        'INT',  'INT',   'INT',   'INT'],
-            ['int',      'int',     'int',    'int',    'int', 'asciiString', 'int',  'int',   'int',   'int']
-        )
+        self.create_or_alter_table_if_not_exists('g2793_player', ['recordid', 'ownerid', 'ladder', 'avatar', 'mii', 'name', 'wins', 'loses', 'count', 'row'], [PK, 'INT', 'INT', 'INT', 'INT', 'TEXT', 'INT', 'INT', 'INT', 'INT'],
+                                                 ['int', 'int', 'int', 'int', 'int', 'asciiString', 'int', 'int', 'int', 'int'])
 
-        self.create_or_alter_table_if_not_exists(
-            'g2793_solo',
-            ['recordid', 'ownerid', 'trackID', 'time',  'ghostID', 'ghostTime', 'date', 'ghostSize', 'row'],
-            [PK,         'INT',     'INT',     'REAL',  'INT',     'REAL',      'INT',  'INT',       'INT'],
-            ['int',      'int',     'int',     'float', 'int',     'float',     'int',  'int',       'int']
-        )
+        self.create_or_alter_table_if_not_exists('g2793_solo', ['recordid', 'ownerid', 'trackID', 'time', 'ghostID', 'ghostTime', 'date', 'ghostSize', 'row'], [PK, 'INT', 'INT', 'REAL', 'INT', 'REAL', 'INT', 'INT', 'INT'],
+                                                 ['int', 'int', 'int', 'float', 'int', 'float', 'int', 'int', 'int'])
 
-        self.create_or_alter_table_if_not_exists(
-            'g2793_custom',
-            ['recordid', 'ownerid', 'name',        'author',      'date', 'env', 'trackFile', 'trackSize', 'goldFile', 'goldSize', 'silverFile', 'silverSize', 'bronzeFile', 'bronzeSize', 'isValidated'],
-            [PK,         'INT',     'TEXT',        'TEXT',        'INT',  'INT', 'INT',       'INT',       'INT',      'INT',      'INT',        'INT',        'INT',        'INT',        'INT'],
-            ['int',      'int',     'asciiString', 'asciiString', 'int',  'int', 'int',       'int',       'int',      'int',      'int',        'int',        'int',        'int',        'int']
-        )
+        self.create_or_alter_table_if_not_exists('g2793_custom',
+                                                 ['recordid', 'ownerid', 'name', 'author', 'date', 'env', 'trackFile', 'trackSize', 'goldFile', 'goldSize', 'silverFile', 'silverSize', 'bronzeFile', 'bronzeSize', 'isValidated'],
+                                                 [PK, 'INT', 'TEXT', 'TEXT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT'],
+                                                 ['int', 'int', 'asciiString', 'asciiString', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int'])
 
-        self.create_or_alter_table_if_not_exists(
-            'g2793_customDLC',
-            ['recordid', 'ownerid', 'name',        'author',      'date', 'env', 'trackFile', 'trackSize', 'goldFile', 'goldSize', 'silverFile', 'silverSize', 'bronzeFile', 'bronzeSize', 'isValidated', 'isDLC'],
-            [PK,         'INT',     'TEXT',        'TEXT',        'INT',  'INT', 'INT',       'INT',       'INT',      'INT',      'INT',        'INT',        'INT',        'INT',        'INT',         'INT'],
-            ['int',      'int',     'asciiString', 'asciiString', 'int',  'int', 'int',       'int',       'int',      'int',      'int',        'int',        'int',        'int',        'int',         'int']
-        )
+        self.create_or_alter_table_if_not_exists('g2793_customDLC',
+                                                 ['recordid', 'ownerid', 'name', 'author', 'date', 'env', 'trackFile', 'trackSize', 'goldFile', 'goldSize', 'silverFile', 'silverSize', 'bronzeFile', 'bronzeSize', 'isValidated', 'isDLC'],
+                                                 [PK, 'INT', 'TEXT', 'TEXT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT', 'INT'],
+                                                 ['int', 'int', 'asciiString', 'asciiString', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int', 'int'])
 
         # load column info into memory, unfortunately there's no simple way
         # to check for column-existence so get that data in advance
@@ -214,7 +146,7 @@ class StorageHTTPServer(http.server.HTTPServer):
 
     def table_exists(self, name):
         cursor = self.db.cursor()
-        cursor.execute("SELECT Count(1) FROM sqlite_master WHERE type='table' AND name=?", (name,))
+        cursor.execute("SELECT Count(1) FROM sqlite_master WHERE type='table' AND name=?", (name, ))
         exists = cursor.fetchone()[0]
         return True if exists else False
 
@@ -263,6 +195,7 @@ class FilterSyntaxException(Exception):
 
 
 class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
+
     def confirm_columns(self, columndata, table):
         '''Check if the columns the user wants to access actually exist, which should prevent SQL Injection'''
         columns = []
@@ -312,7 +245,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                 if last_space >= 0:
                     last_token = out[last_space + 1:]
                     if last_token in self.server.valid_sql_terms:
-                        out = out[: last_space]
+                        out = out[:last_space]
 
                 return out
 
@@ -349,7 +282,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
             logger.log(logging.DEBUG, "SakeStorageServer SOAPAction %s", action)
             logger.log(logging.DEBUG, post)
 
-            shortaction = action[action.rfind('/')+1:-1]
+            shortaction = action[action.rfind('/') + 1:-1]
 
             ret: str = '<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body>'
 
@@ -397,7 +330,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                         else:
                             statement += ' AND '
                         statement += ' ( '
-                        statement += ' OR '.join('ownerid = '+str(int(oid.firstChild.data)) for oid in oids)
+                        statement += ' OR '.join('ownerid = ' + str(int(oid.firstChild.data)) for oid in oids)
                         statement += ' ) '
 
                 elif shortaction == 'GetMyRecords':
@@ -419,7 +352,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                     else:
                         statement += ' AND '
                     statement += ' ( '
-                    statement += ' OR '.join('recordid = '+str(int(r.firstChild.data)) for r in recordids)
+                    statement += ' OR '.join('recordid = ' + str(int(r.firstChild.data)) for r in recordids)
                     statement += ' ) '
 
                 # if there's a filter, evaluate it
@@ -489,8 +422,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
 
                 values = data.getElementsByTagName('ns1:values')[0]
                 recordfields = values.getElementsByTagName('ns1:RecordField')
-                columndata = [rf.getElementsByTagName('ns1:name')[0]
-                              for rf in recordfields]
+                columndata = [rf.getElementsByTagName('ns1:name')[0] for rf in recordfields]
 
                 try:
                     columns = self.confirm_columns(columndata, table)
@@ -512,7 +444,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                 if shortaction == 'UpdateRecord':
                     statement = 'UPDATE ' + table + ' SET '
 
-                    statement += ', '.join(c+' = ?' for c in columns)
+                    statement += ', '.join(c + ' = ?' for c in columns)
                     statement += ' WHERE recordid = ? AND ownerid = ?'
                     rowdata.append(recordid)
                     rowdata.append(profileid)
@@ -521,7 +453,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
 
                     statement += ', '.join(columns)
                     statement += ', ownerid) VALUES ('
-                    statement += '?, '*len(columns)
+                    statement += '?, ' * len(columns)
                     statement += '?)'
                     rowdata.append(profileid)
                 else:
@@ -545,7 +477,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                         if rowdata[i] == 0:  # is a delete command, just set filesize to 0
                             filesize = 0
                         else:
-                            cursor.execute('SELECT path FROM filepaths WHERE fileid = ?', (int(rowdata[i]),))
+                            cursor.execute('SELECT path FROM filepaths WHERE fileid = ?', (int(rowdata[i]), ))
 
                             try:
                                 filename = cursor.fetchone()[0]
@@ -569,7 +501,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
 
         elif self.path.startswith("/SakeFileServer/upload.aspx?"):
             retcode = 0
-            params = urllib.parse.parse_qs(self.path[self.path.find('?')+1:])
+            params = urllib.parse.parse_qs(self.path[self.path.find('?') + 1:])
 
             gameid = int(params['gameid'][0])
             playerid = int(params['pid'][0])
@@ -635,7 +567,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.startswith("/SakeFileServer/download.aspx?"):
-            params = urllib.parse.parse_qs(self.path[self.path.find('?')+1:])
+            params = urllib.parse.parse_qs(self.path[self.path.find('?') + 1:])
             retcode = 0
             ret = ''
 
@@ -650,7 +582,7 @@ class StorageHTTPServerHandler(http.server.BaseHTTPRequestHandler):
                 logger.log(logging.DEBUG, "SakeFileServer Download Request in game %s, user %s, file %s", gameid, playerid, fileid)
 
                 cursor = self.server.db.cursor()
-                cursor.execute('SELECT path FROM filepaths WHERE fileid = ?', (fileid,))
+                cursor.execute('SELECT path FROM filepaths WHERE fileid = ?', (fileid, ))
 
                 try:
                     filename = cursor.fetchone()[0]

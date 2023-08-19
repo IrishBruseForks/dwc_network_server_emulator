@@ -35,8 +35,7 @@ logger = dwc_config.get_logger('NasServer')
 
 def handle_post(handler, addr, post):
     """Handle unknown path."""
-    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!",
-               handler.path, *addr)
+    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!", handler.path, *addr)
     handler.send_response(404)
     return None
 
@@ -59,8 +58,7 @@ def handle_ac_acctcreate(handler, db, addr, post):
             "locator": "gamespy.com",
             "reason": "User banned."
         }
-        logger.log(logging.DEBUG, "Acctcreate denied for banned user %s",
-                   str(post))
+        logger.log(logging.DEBUG, "Acctcreate denied for banned user %s", str(post))
     else:
         ret = {
             "retry": "0",
@@ -162,8 +160,7 @@ def handle_ac_svcloc(handler, db, addr, post):
 
 def handle_ac(handler, addr, post):
     """Handle ac POST request."""
-    logger.log(logging.DEBUG, "Ac request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Ac request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
     action = post["action"].lower()
@@ -180,8 +177,7 @@ def handle_ac(handler, addr, post):
 
 def handle_pr(handler, addr, post):
     """Handle pr POST request."""
-    logger.log(logging.DEBUG, "Pr request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Pr request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
     words = len(post["words"].split('\t'))
@@ -242,10 +238,7 @@ class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
             qs = self.rfile.read(length).decode("ascii")
             print(qs)
             post = utils.qs_to_dict(qs)
-            client_address = (
-                self.headers.get('x-forwarded-for', self.client_address[0]),
-                self.client_address[1]
-            )
+            client_address = (self.headers.get('x-forwarded-for', self.client_address[0]), self.client_address[1])
             post['ipaddr'] = client_address[0]
 
             command = self.post_paths.get(self.path, handle_post)
@@ -266,11 +259,11 @@ class NasHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 class NasServer(object):
+
     def start(self):
         address = dwc_config.get_ip_port('NasServer')
         httpd = NasHTTPServer(address, NasHTTPServerHandler)
-        logger.log(logging.INFO, "Now listening for connections on %s:%d...",
-                   *address)
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", *address)
         httpd.serve_forever()
 
 

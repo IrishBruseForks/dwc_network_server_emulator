@@ -35,11 +35,11 @@ logger_output_to_console = True
 logger_output_to_file = True
 logger_name = "GamespyDatabase"
 logger_filename = "gamespy_database.log"
-logger = utils.create_logger(logger_name, logger_filename, -1,
-                             logger_output_to_console, logger_output_to_file)
+logger = utils.create_logger(logger_name, logger_filename, -1, logger_output_to_console, logger_output_to_file)
 
 
 class Transaction(object):
+
     def __init__(self, connection):
         self.conn = connection
         self.databaseAltered = False
@@ -55,7 +55,7 @@ class Transaction(object):
     def _executeAndMeasure(self, cursor, statement, parameters):
         logTransactionId = utils.generate_random_str(8)
 
-        logger.log(SQL_LOGLEVEL, "[%s] STARTING: " % logTransactionId + statement.replace('?', '%s') % parameters)
+        logger.log(SQL_LOGLEVEL, "[%s] STARTING: "%logTransactionId + statement.replace('?', '%s') % parameters)
 
         timeStart = time.time()
 
@@ -66,12 +66,8 @@ class Transaction(object):
 
         logger.log(SQL_LOGLEVEL, "[%s] DONE: Took %s real time seconds.", logTransactionId, timeDiff)
         if timeDiff > 1.0:
-            logger.log(logging.WARNING,
-                       "[%s] WARNING: SQL Statement took %s seconds!",
-                       logTransactionId, timeDiff)
-            logger.log(logging.WARNING,
-                       "[%s] " % logTransactionId +
-                       statement.replace('?', '%s') % parameters)
+            logger.log(logging.WARNING, "[%s] WARNING: SQL Statement took %s seconds!", logTransactionId, timeDiff)
+            logger.log(logging.WARNING, "[%s] "%logTransactionId + statement.replace('?', '%s') % parameters)
         return
 
     def queryall(self, statement, parameters=()):
@@ -79,14 +75,12 @@ class Transaction(object):
             self._executeAndMeasure(cursor, statement, parameters)
             rows = cursor.fetchall()
             return rows
-        return []
 
     def queryone(self, statement, parameters=()):
         with closing(self.conn.cursor()) as cursor:
             self._executeAndMeasure(cursor, statement, parameters)
             row = cursor.fetchone()
             return row
-        return []
 
     def nonquery(self, statement, parameters=()):
         with closing(self.conn.cursor()) as cursor:
@@ -96,6 +90,7 @@ class Transaction(object):
 
 
 class GamespyDatabase(object):
+
     def __init__(self, filename='gpcm.db'):
         self.conn = sqlite3.connect(filename, timeout=10.0)
         self.conn.row_factory = sqlite3.Row
@@ -119,65 +114,50 @@ class GamespyDatabase(object):
             # seeing any evidence yet to say otherwise as far as Nintendo
             # DS games go.
 
-            tx.nonquery("CREATE TABLE IF NOT EXISTS users"
-                        " (profileid INT, userid TEXT, password TEXT,"
-                        " gsbrcd TEXT, email TEXT, uniquenick TEXT,"
-                        " pid TEXT, lon TEXT, lat TEXT, loc TEXT,"
-                        " firstname TEXT, lastname TEXT, stat TEXT,"
-                        " partnerid TEXT, console INT, csnum TEXT,"
-                        " cfc TEXT, bssid TEXT, devname BLOB, birth TEXT,"
-                        " gameid TEXT, enabled INT, zipcode TEXT, aim TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS sessions"
-                        " (session TEXT, profileid INT, loginticket TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS buddies"
-                        " (userProfileId INT, buddyProfileId INT, time INT,"
-                        " status INT, notified INT, gameid TEXT,"
-                        " blocked INT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS pending_messages"
-                        " (sourceid INT, targetid INT, msg TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS gamestat_profile"
-                        " (profileid INT, dindex TEXT, ptype TEXT,"
-                        " data TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS gameinfo"
-                        " (profileid INT, dindex TEXT, ptype TEXT,"
-                        " data TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS nas_logins"
-                        " (userid TEXT, authtoken TEXT, data TEXT)")
-            tx.nonquery("CREATE TABLE IF NOT EXISTS banned"
-                        " (gameid TEXT, ipaddr TEXT)")
+            tx.nonquery("""
+            CREATE TABLE IF NOT EXISTS users
+            (
+                profileid INT, userid TEXT, password TEXT,
+                gsbrcd TEXT, email TEXT, uniquenick TEXT,
+                pid TEXT, lon TEXT, lat TEXT, loc TEXT,
+                firstname TEXT, lastname TEXT, stat TEXT,
+                partnerid TEXT, console INT, csnum TEXT,
+                cfc TEXT, bssid TEXT, devname BLOB, birth TEXT,
+                gameid TEXT, enabled INT, zipcode TEXT, aim TEXT
+            )
+            """)
+
+            tx.nonquery("""
+            CREATE TABLE IF NOT EXISTS buddies"
+            (
+                userProfileId INT, buddyProfileId INT,
+                time INT,status INT, notified INT,
+                gameid TEXT, blocked INT
+            )
+            """)
+
+            tx.nonquery("CREATE TABLE IF NOT EXISTS sessions (session TEXT, profileid INT, loginticket TEXT)")
+            tx.nonquery("CREATE TABLE IF NOT EXISTS pending_messages (sourceid INT, targetid INT, msg TEXT)")
+            tx.nonquery("CREATE TABLE IF NOT EXISTS gamestat_profile (profileid INT, dindex TEXT, ptype TEXT, data TEXT)")
+            tx.nonquery("CREATE TABLE IF NOT EXISTS gameinfo (profileid INT, dindex TEXT, ptype TEXT, data TEXT)")
+            tx.nonquery("CREATE TABLE IF NOT EXISTS nas_logins (userid TEXT, authtoken TEXT, data TEXT)")
+            tx.nonquery("CREATE TABLE IF NOT EXISTS banned (gameid TEXT, ipaddr TEXT)")
             tx.nonquery("CREATE TABLE IF NOT EXISTS pending (macadr TEXT)")
             tx.nonquery("CREATE TABLE IF NOT EXISTS registered (macadr TEXT)")
 
             # Create some indexes for performance.
-            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS"
-                        " gamestatprofile_triple"
-                        " ON gamestat_profile(profileid,dindex,ptype)")
-            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS"
-                        " users_profileid_idx ON users (profileid)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " users_userid_idx ON users (userid)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " pending_messages_targetid_idx"
-                        " ON pending_messages (targetid)")
-            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS"
-                        " sessions_session_idx ON sessions (session)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " sessions_loginticket_idx ON sessions (loginticket)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " sessions_profileid_idx ON sessions (profileid)")
-            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS"
-                        " nas_logins_authtoken_idx ON nas_logins (authtoken)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " nas_logins_userid_idx ON nas_logins (userid)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " buddies_userProfileId_idx"
-                        " ON buddies (userProfileId)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " buddies_buddyProfileId_idx"
-                        " ON buddies (buddyProfileId)")
-            tx.nonquery("CREATE INDEX IF NOT EXISTS"
-                        " gamestat_profile_profileid_idx"
-                        " ON gamestat_profile (profileid)")
+            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS gamestatprofile_triple ON gamestat_profile(profileid,dindex,ptype)")
+            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS users_profileid_idx ON users (profileid)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS users_userid_idx ON users (userid)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS pending_messages_targetid_idx ON pending_messages (targetid)")
+            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS sessions_session_idx ON sessions (session)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS  sessions_loginticket_idx ON sessions (loginticket)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS sessions_profileid_idx ON sessions (profileid)")
+            tx.nonquery("CREATE UNIQUE INDEX IF NOT EXISTS nas_logins_authtoken_idx ON nas_logins (authtoken)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS nas_logins_userid_idx ON nas_logins (userid)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS buddies_userProfileId_idx ON buddies (userProfileId)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS buddies_buddyProfileId_idx ON buddies (buddyProfileId)")
+            tx.nonquery("CREATE INDEX IF NOT EXISTS gamestat_profile_profileid_idx ON gamestat_profile (profileid)")
 
     def get_dict(self, row):
         if not row:
@@ -205,28 +185,19 @@ class GamespyDatabase(object):
 
     def check_user_exists(self, userid, gsbrcd):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM users WHERE userid = ? AND gsbrcd = ?",
-                (userid, gsbrcd)
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM users WHERE userid = ? AND gsbrcd = ?", (userid, gsbrcd))
             count = int(row[0])
         return count > 0
 
     def check_user_enabled(self, userid, gsbrcd):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT enabled FROM users WHERE userid = ? AND gsbrcd = ?",
-                (userid, gsbrcd)
-            )
+            row = tx.queryone("SELECT enabled FROM users WHERE userid = ? AND gsbrcd = ?", (userid, gsbrcd))
             enabled = int(row[0])
         return enabled > 0
 
     def check_profile_exists(self, profileid):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM users WHERE profileid = ?",
-                (profileid,)
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM users WHERE profileid = ?", (profileid, ))
             count = int(row[0])
         return count > 0
 
@@ -234,19 +205,13 @@ class GamespyDatabase(object):
         profile = {}
         if profileid:
             with Transaction(self.conn) as tx:
-                row = tx.queryone(
-                    "SELECT * FROM users WHERE profileid = ?",
-                    (profileid,)
-                )
+                row = tx.queryone("SELECT * FROM users WHERE profileid = ?", (profileid, ))
                 profile = self.get_dict(row)
         return profile
 
     def perform_login(self, userid, password, gsbrcd):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT * FROM users WHERE userid = ? and gsbrcd = ?",
-                (userid, gsbrcd)
-            )
+            row = tx.queryone("SELECT * FROM users WHERE userid = ? and gsbrcd = ?", (userid, gsbrcd))
             r = self.get_dict(row)
 
         profileid = None  # Default, user doesn't exist
@@ -262,9 +227,7 @@ class GamespyDatabase(object):
 
         return profileid
 
-    def create_user(self, userid, password, email, uniquenick, gsbrcd,
-                    console, csnum, cfc, bssid, devname, birth, gameid,
-                    macadr):
+    def create_user(self, userid, password, email, uniquenick, gsbrcd, console, csnum, cfc, bssid, devname, birth, gameid, macadr):
         if not self.check_user_exists(userid, gsbrcd):
             profileid = self.get_next_free_profileid()
 
@@ -294,17 +257,12 @@ class GamespyDatabase(object):
             with Transaction(self.conn) as tx:
                 q = "INSERT INTO users VALUES" \
                     " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                tx.nonquery(q, (profileid, str(userid), password, gsbrcd,
-                                email, uniquenick, pid, lon, lat, loc,
-                                firstname, lastname, stat, partnerid,
-                                console, csnum, cfc, bssid, devname, birth,
-                                gameid, enabled, zipcode, aim))
+                tx.nonquery(q, (profileid, str(userid), password, gsbrcd, email, uniquenick, pid, lon, lat, loc, firstname, lastname, stat, partnerid, console, csnum, cfc, bssid, devname, birth, gameid, enabled, zipcode, aim))
 
             return profileid
         return None
 
-    def import_user(self, profileid, uniquenick, firstname, lastname, email,
-                    gsbrcd, gameid, console):
+    def import_user(self, profileid, uniquenick, firstname, lastname, email, gsbrcd, gameid, console):
         if not self.check_profile_exists(profileid):
             pid = "11"
             lon = "0.000000"
@@ -328,11 +286,7 @@ class GamespyDatabase(object):
             with Transaction(self.conn) as tx:
                 q = "INSERT INTO users VALUES" \
                     " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                tx.nonquery(q, (profileid, str(userid), password, gsbrcd,
-                                email, uniquenick, pid, lon, lat, loc,
-                                firstname, lastname, stat, partnerid,
-                                console, csnum, cfc, bssid, devname, birth,
-                                gameid, enabled, zipcode, aim))
+                tx.nonquery(q, (profileid, str(userid), password, gsbrcd, email, uniquenick, pid, lon, lat, loc, firstname, lastname, stat, partnerid, console, csnum, cfc, bssid, devname, birth, gameid, enabled, zipcode, aim))
 
             return profileid
 
@@ -344,15 +298,11 @@ class GamespyDatabase(object):
 
     def save_pending_message(self, sourceid, targetid, msg):
         with Transaction(self.conn) as tx:
-            tx.nonquery("INSERT INTO pending_messages VALUES (?,?,?)",
-                        (sourceid, targetid, msg))
+            tx.nonquery("INSERT INTO pending_messages VALUES (?,?,?)", (sourceid, targetid, msg))
 
     def get_pending_messages(self, profileid):
         with Transaction(self.conn) as tx:
-            rows = tx.queryall(
-                "SELECT * FROM pending_messages WHERE targetid = ?",
-                (profileid,)
-            )
+            rows = tx.queryall("SELECT * FROM pending_messages WHERE targetid = ?", (profileid, ))
 
         return [self.get_dict(row) for row in rows]
 
@@ -373,10 +323,7 @@ class GamespyDatabase(object):
     # time we get a profile id.
     def get_profileid_from_session_key(self, session_key):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT profileid FROM sessions WHERE session = ?",
-                (session_key,)
-            )
+            row = tx.queryone("SELECT profileid FROM sessions WHERE session = ?", (session_key, ))
             r = self.get_dict(row)
 
         profileid = -1  # Default, invalid session key
@@ -387,10 +334,7 @@ class GamespyDatabase(object):
 
     def get_profileid_from_loginticket(self, loginticket):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT profileid FROM sessions WHERE loginticket = ?",
-                (loginticket,)
-            )
+            row = tx.queryone("SELECT profileid FROM sessions WHERE loginticket = ?", (loginticket, ))
 
         profileid = -1
         if row:
@@ -404,10 +348,7 @@ class GamespyDatabase(object):
         profile = {}
         if profileid:
             with Transaction(self.conn) as tx:
-                row = tx.queryone(
-                    "SELECT profileid FROM sessions WHERE session = ?",
-                    (session_key,)
-                )
+                row = tx.queryone("SELECT profileid FROM sessions WHERE session = ?", (session_key, ))
                 profile = self.get_dict(row)
 
         return profile
@@ -421,20 +362,14 @@ class GamespyDatabase(object):
         while True:
             with Transaction(self.conn) as tx:
                 session_key = utils.generate_random_number_str(min_size)
-                row = tx.queryone(
-                    "SELECT COUNT(*) FROM sessions WHERE session = ?",
-                    (session_key,)
-                )
+                row = tx.queryone("SELECT COUNT(*) FROM sessions WHERE session = ?", (session_key, ))
                 count = int(row[0])
                 if not count:
                     return session_key
 
     def delete_session(self, profileid):
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "DELETE FROM sessions WHERE profileid = ?",
-                (profileid,)
-            )
+            tx.nonquery("DELETE FROM sessions WHERE profileid = ?", (profileid, ))
 
     def create_session(self, profileid, loginticket):
         if profileid is not None and not self.check_profile_exists(profileid):
@@ -446,20 +381,14 @@ class GamespyDatabase(object):
         # Create new session
         session_key = self.generate_session_key(8)
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "INSERT INTO sessions VALUES (?, ?, ?)",
-                (session_key, profileid, loginticket)
-            )
+            tx.nonquery("INSERT INTO sessions VALUES (?, ?, ?)", (session_key, profileid, loginticket))
 
         return session_key
 
     def get_session_list(self, profileid=None):
         with Transaction(self.conn) as tx:
             if profileid is not None:
-                r = tx.queryall(
-                    "SELECT * FROM sessions WHERE profileid = ?",
-                    (profileid,)
-                )
+                r = tx.queryall("SELECT * FROM sessions WHERE profileid = ?", (profileid, ))
             else:
                 r = tx.queryall("SELECT * FROM sessions")
 
@@ -468,10 +397,7 @@ class GamespyDatabase(object):
     # nas server functions
     def get_nas_login(self, authtoken):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT data FROM nas_logins WHERE authtoken = ?",
-                (authtoken,)
-            )
+            row = tx.queryone("SELECT data FROM nas_logins WHERE authtoken = ?", (authtoken, ))
             r = self.get_dict(row)
 
         if r is None:
@@ -481,10 +407,7 @@ class GamespyDatabase(object):
 
     def get_nas_login_from_userid(self, userid):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT data FROM nas_logins WHERE userid = ?",
-                (userid,)
-            )
+            row = tx.queryone("SELECT data FROM nas_logins WHERE userid = ?", (userid, ))
             r = self.get_dict(row)
 
         if r is None:
@@ -494,26 +417,17 @@ class GamespyDatabase(object):
 
     def is_banned(self, postdata):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM banned WHERE gameid = ? AND ipaddr = ?",
-                (postdata['gamecd'][:-1], postdata['ipaddr'])
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM banned WHERE gameid = ? AND ipaddr = ?", (postdata['gamecd'][:-1], postdata['ipaddr']))
         return int(row[0]) > 0
 
     def pending(self, postdata):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM pending WHERE macadr = ?",
-                (postdata['macadr'],)
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM pending WHERE macadr = ?", (postdata['macadr'], ))
             return int(row[0]) > 0
 
     def registered(self, postdata):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM registered WHERE macadr = ?",
-                (postdata['macadr'],)
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM registered WHERE macadr = ?", (postdata['macadr'], ))
             return int(row[0]) > 0
 
     def get_next_available_userid(self):
@@ -546,19 +460,13 @@ class GamespyDatabase(object):
         while True:
             with Transaction(self.conn) as tx:
                 authtoken = "NDS" + utils.generate_random_str(size)
-                row = tx.queryone(
-                    "SELECT COUNT(*) FROM nas_logins WHERE authtoken = ?",
-                    (authtoken,)
-                )
+                row = tx.queryone("SELECT COUNT(*) FROM nas_logins WHERE authtoken = ?", (authtoken, ))
                 count = int(row[0])
                 if not count:
                     break
 
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT * FROM nas_logins WHERE userid = ?",
-                (userid,)
-            )
+            row = tx.queryone("SELECT * FROM nas_logins WHERE userid = ?", (userid, ))
             r = self.get_dict(row)
 
         if "devname" in data:
@@ -570,16 +478,10 @@ class GamespyDatabase(object):
 
         with Transaction(self.conn) as tx:
             if r is None:  # no row, add it
-                tx.nonquery(
-                    "INSERT INTO nas_logins VALUES (?, ?, ?)",
-                    (userid, authtoken, data)
-                )
+                tx.nonquery("INSERT INTO nas_logins VALUES (?, ?, ?)", (userid, authtoken, data))
             else:
-                tx.nonquery(
-                    "UPDATE nas_logins SET authtoken = ?, data = ?"
-                    " WHERE userid = ?",
-                    (authtoken, data, userid)
-                )
+                tx.nonquery("UPDATE nas_logins SET authtoken = ?, data = ?"
+                            " WHERE userid = ?", (authtoken, data, userid))
 
         return authtoken
 
@@ -589,130 +491,85 @@ class GamespyDatabase(object):
 
         # status == 0 -> not authorized
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "INSERT INTO buddies VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (userProfileId, buddyProfileId, now, 0, 0, "", 0)
-            )
+            tx.nonquery("INSERT INTO buddies VALUES (?, ?, ?, ?, ?, ?, ?)", (userProfileId, buddyProfileId, now, 0, 0, "", 0))
 
     def auth_buddy(self, userProfileId, buddyProfileId):
         # status == 1 -> authorized
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "UPDATE buddies SET status = ?"
-                " WHERE userProfileId = ? AND buddyProfileId = ?",
-                (1, userProfileId, buddyProfileId)
-            )
+            tx.nonquery("UPDATE buddies SET status = ?"
+                        " WHERE userProfileId = ? AND buddyProfileId = ?", (1, userProfileId, buddyProfileId))
 
     def block_buddy(self, userProfileId, buddyProfileId):
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "UPDATE buddies SET blocked = ?"
-                " WHERE userProfileId = ? AND buddyProfileId = ?",
-                (1, userProfileId, buddyProfileId)
-            )
+            tx.nonquery("UPDATE buddies SET blocked = ?"
+                        " WHERE userProfileId = ? AND buddyProfileId = ?", (1, userProfileId, buddyProfileId))
 
     def unblock_buddy(self, userProfileId, buddyProfileId):
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "UPDATE buddies SET blocked = ?"
-                " WHERE userProfileId = ? AND buddyProfileId = ?",
-                (0, userProfileId, buddyProfileId)
-            )
+            tx.nonquery("UPDATE buddies SET blocked = ?"
+                        " WHERE userProfileId = ? AND buddyProfileId = ?", (0, userProfileId, buddyProfileId))
 
     def get_buddy(self, userProfileId, buddyProfileId):
         if userProfileId and buddyProfileId:
             with Transaction(self.conn) as tx:
-                row = tx.queryone(
-                    "SELECT * FROM buddies"
-                    " WHERE userProfileId = ? AND buddyProfileId = ?",
-                    (userProfileId, buddyProfileId)
-                )
+                row = tx.queryone("SELECT * FROM buddies"
+                                  " WHERE userProfileId = ? AND buddyProfileId = ?", (userProfileId, buddyProfileId))
                 return self.get_dict(row)
         return {}
 
     def delete_buddy(self, userProfileId, buddyProfileId):
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "DELETE FROM buddies"
-                " WHERE userProfileId = ? AND buddyProfileId = ?",
-                (userProfileId, buddyProfileId)
-            )
+            tx.nonquery("DELETE FROM buddies"
+                        " WHERE userProfileId = ? AND buddyProfileId = ?", (userProfileId, buddyProfileId))
 
     def get_buddy_list(self, userProfileId):
         with Transaction(self.conn) as tx:
-            rows = tx.queryall(
-                "SELECT * FROM buddies"
-                " WHERE userProfileId = ? AND blocked = 0",
-                (userProfileId,)
-            )
+            rows = tx.queryall("SELECT * FROM buddies"
+                               " WHERE userProfileId = ? AND blocked = 0", (userProfileId, ))
 
         return [self.get_dict(row) for row in rows]
 
     def get_blocked_list(self, userProfileId):
         with Transaction(self.conn) as tx:
-            rows = tx.queryall(
-                "SELECT * FROM buddies"
-                " WHERE userProfileId = ? AND blocked = 1",
-                (userProfileId,)
-            )
+            rows = tx.queryall("SELECT * FROM buddies"
+                               " WHERE userProfileId = ? AND blocked = 1", (userProfileId, ))
 
         return [self.get_dict(row) for row in rows]
 
     def get_pending_buddy_requests(self, userProfileId):
         with Transaction(self.conn) as tx:
-            rows = tx.queryall(
-                "SELECT * FROM buddies"
-                " WHERE buddyProfileId = ? AND status = 0",
-                (userProfileId,)
-            )
+            rows = tx.queryall("SELECT * FROM buddies"
+                               " WHERE buddyProfileId = ? AND status = 0", (userProfileId, ))
 
         return [self.get_dict(row) for row in rows]
 
     def buddy_need_auth_message(self, userProfileId):
         with Transaction(self.conn) as tx:
-            rows = tx.queryall(
-                "SELECT * FROM buddies"
-                " WHERE buddyProfileId = ? AND status = 1 AND notified = 0",
-                (userProfileId,)
-            )
+            rows = tx.queryall("SELECT * FROM buddies"
+                               " WHERE buddyProfileId = ? AND status = 1 AND notified = 0", (userProfileId, ))
 
         return [self.get_dict(row) for row in rows]
 
     def buddy_sent_auth_message(self, userProfileId, buddyProfileId):
         with Transaction(self.conn) as tx:
-            tx.nonquery(
-                "UPDATE buddies SET notified = ?"
-                " WHERE userProfileId = ? AND buddyProfileId = ?",
-                (1, userProfileId, buddyProfileId)
-            )
+            tx.nonquery("UPDATE buddies SET notified = ?"
+                        " WHERE userProfileId = ? AND buddyProfileId = ?", (1, userProfileId, buddyProfileId))
 
     # Gamestats-related functions
     def pd_insert(self, profileid, dindex, ptype, data):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT COUNT(*) FROM gamestat_profile"
-                " WHERE profileid = ? AND dindex = ? AND ptype = ?",
-                (profileid, dindex, ptype)
-            )
+            row = tx.queryone("SELECT COUNT(*) FROM gamestat_profile"
+                              " WHERE profileid = ? AND dindex = ? AND ptype = ?", (profileid, dindex, ptype))
             count = int(row[0])
             if count > 0:
-                tx.nonquery(
-                    "UPDATE gamestat_profile SET data = ?"
-                    " WHERE profileid = ? AND dindex = ? AND ptype = ?",
-                    (data, profileid, dindex, ptype)
-                )
+                tx.nonquery("UPDATE gamestat_profile SET data = ?"
+                            " WHERE profileid = ? AND dindex = ? AND ptype = ?", (data, profileid, dindex, ptype))
             else:
-                tx.nonquery(
-                    "INSERT INTO gamestat_profile"
-                    " (profileid, dindex, ptype, data) VALUES(?,?,?,?)",
-                    (profileid, dindex, ptype, data)
-                )
+                tx.nonquery("INSERT INTO gamestat_profile"
+                            " (profileid, dindex, ptype, data) VALUES(?,?,?,?)", (profileid, dindex, ptype, data))
 
     def pd_get(self, profileid, dindex, ptype):
         with Transaction(self.conn) as tx:
-            row = tx.queryone(
-                "SELECT * FROM gamestat_profile"
-                " WHERE profileid = ? AND dindex = ? AND ptype = ?",
-                (profileid, dindex, ptype)
-            )
+            row = tx.queryone("SELECT * FROM gamestat_profile"
+                              " WHERE profileid = ? AND dindex = ? AND ptype = ?", (profileid, dindex, ptype))
         return self.get_dict(row)

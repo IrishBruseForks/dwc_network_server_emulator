@@ -34,8 +34,7 @@ logger = dwc_config.get_logger('Dls1Server')
 
 def handle_post(handler, addr, post):
     """Handle unknown path."""
-    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!",
-               handler.path, *addr)
+    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!", handler.path, *addr)
     handler.send_response(404)
     return None
 
@@ -74,16 +73,14 @@ def handle_download_contents(handler, dlc_path, post):
     else:
         handler.send_response(200)
         handler.send_header("Content-type", "application/x-dsdl")
-        handler.send_header("Content-Disposition",
-                            'attachment; filename="%s"' % post["contents"])
+        handler.send_header("Content-Disposition", 'attachment; filename="%s"' % post["contents"])
         handler.send_header("X-DLS-Host", "http://127.0.0.1/")
     return ret
 
 
 def handle_download(handler, addr, post):
     """Handle download POST request."""
-    logger.log(logging.DEBUG, "Download request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Download request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
     action = str(post["action"]).lower()
@@ -91,8 +88,7 @@ def handle_download(handler, addr, post):
     dlc_path = os.path.abspath(os.path.join("dlc", post["gamecd"]))
 
     if os.path.commonprefix([dlc_dir, dlc_path]) != dlc_dir:
-        logging.log(logging.WARNING,
-                    'Attempted directory traversal attack "%s",'
+        logging.log(logging.WARNING, 'Attempted directory traversal attack "%s",'
                     ' cancelling.', dlc_path)
         handler.send_response(403)
         return
@@ -124,10 +120,7 @@ class Dls1HTTPServerHandler(http.server.BaseHTTPRequestHandler):
         try:
             length = int(self.headers['content-length'])
             post = utils.qs_to_dict(self.rfile.read(length))
-            client_address = (
-                self.headers.get('x-forwarded-for', self.client_address[0]),
-                self.client_address[1]
-            )
+            client_address = (self.headers.get('x-forwarded-for', self.client_address[0]), self.client_address[1])
             post['ipaddr'] = client_address[0]
 
             command = self.post_paths.get(self.path, handle_post)
@@ -148,11 +141,11 @@ class Dls1HTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 class Dls1Server(object):
+
     def start(self):
         address = dwc_config.get_ip_port('Dls1Server')
         httpd = Dls1HTTPServer(address, Dls1HTTPServerHandler)
-        logger.log(logging.INFO, "Now listening for connections on %s:%d...",
-                   *address)
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", *address)
         httpd.serve_forever()
 
 

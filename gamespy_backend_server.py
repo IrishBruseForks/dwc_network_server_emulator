@@ -73,57 +73,28 @@ class GameSpyServerDatabase(BaseManager):
 
 
 class GameSpyBackendServer(object):
+
     def __init__(self):
         self.server_list = {}
         self.natneg_list = {}
 
-        GameSpyServerDatabase.register(
-            "get_server_list",
-            callable=lambda: self.server_list
-        )
-        GameSpyServerDatabase.register(
-            "find_servers",
-            callable=self.find_servers
-        )
-        GameSpyServerDatabase.register(
-            "find_server_by_address",
-            callable=self.find_server_by_address
-        )
-        GameSpyServerDatabase.register(
-            "find_server_by_local_address",
-            callable=self.find_server_by_local_address
-        )
-        GameSpyServerDatabase.register(
-            "update_server_list",
-            callable=self.update_server_list
-        )
-        GameSpyServerDatabase.register(
-            "delete_server",
-            callable=self.delete_server
-        )
-        GameSpyServerDatabase.register(
-            "add_natneg_server",
-            callable=self.add_natneg_server
-        )
-        GameSpyServerDatabase.register(
-            "get_natneg_server",
-            callable=self.get_natneg_server
-        )
-        GameSpyServerDatabase.register(
-            "delete_natneg_server",
-            callable=self.delete_natneg_server
-        )
+        GameSpyServerDatabase.register("get_server_list", callable=lambda: self.server_list)
+        GameSpyServerDatabase.register("find_servers", callable=self.find_servers)
+        GameSpyServerDatabase.register("find_server_by_address", callable=self.find_server_by_address)
+        GameSpyServerDatabase.register("find_server_by_local_address", callable=self.find_server_by_local_address)
+        GameSpyServerDatabase.register("update_server_list", callable=self.update_server_list)
+        GameSpyServerDatabase.register("delete_server", callable=self.delete_server)
+        GameSpyServerDatabase.register("add_natneg_server", callable=self.add_natneg_server)
+        GameSpyServerDatabase.register("get_natneg_server", callable=self.get_natneg_server)
+        GameSpyServerDatabase.register("delete_natneg_server", callable=self.delete_natneg_server)
 
     def start(self):
         address = dwc_config.get_ip_port('GameSpyManager')
         password = ""
 
-        logger.log(logging.INFO,
-                   "Started server on %s:%d...",
-                   address[0], address[1])
+        logger.log(logging.INFO, "Started server on %s:%d...", address[0], address[1])
 
-        manager = GameSpyServerDatabase(address=address,
-                                        authkey=password)
+        manager = GameSpyServerDatabase(address=address, authkey=password)
         server = manager.get_server()
         server.serve_forever()
 
@@ -415,9 +386,7 @@ class GameSpyBackendServer(object):
 
                 if not valid_filter:
                     # Return only anything matched up until this point.
-                    logger.log(logging.WARNING,
-                               "Invalid filter(s): %s",
-                               filters)
+                    logger.log(logging.WARNING, "Invalid filter(s): %s", filters)
                     # stop_search = True
                     continue
                 else:
@@ -459,11 +428,7 @@ class GameSpyBackendServer(object):
                 result['localip' + str(i)] = server['localip' + str(i)]
                 i += 1
 
-            attrs = [
-                    "localport", "natneg",
-                    "publicip", "publicport",
-                    "__session__", "__console__"
-            ]
+            attrs = ["localport", "natneg", "publicip", "publicport", "__session__", "__console__"]
             result.update({name: server[name]
                            for name in attrs if name in server})
 
@@ -480,9 +445,7 @@ class GameSpyBackendServer(object):
             result['requested'] = requested
             servers.append(result)
 
-        logger.log(logging.DEBUG,
-                   "Matched %d servers in %s seconds",
-                   len(servers), (time.time() - start))
+        logger.log(logging.DEBUG, "Matched %d servers in %s seconds", len(servers), (time.time() - start))
 
         return servers
 
@@ -500,13 +463,9 @@ class GameSpyBackendServer(object):
         value['__session__'] = session
         value['__console__'] = console
 
-        logger.log(logging.DEBUG,
-                   "Added %s to the server list for %s",
-                   value, gameid)
+        logger.log(logging.DEBUG, "Added %s to the server list for %s", value, gameid)
         self.server_list[gameid].append(value)
-        logger.log(logging.DEBUG,
-                   "%s servers: %d",
-                   gameid, len(self.server_list[gameid]))
+        logger.log(logging.DEBUG, "%s servers: %d", gameid, len(self.server_list[gameid]))
 
         return value
 
@@ -517,12 +476,9 @@ class GameSpyBackendServer(object):
 
         # Remove all servers hosted by the given session id.
         count = len(self.server_list[gameid])
-        self.server_list[gameid] = [x for x in self.server_list[gameid]
-                                    if x['__session__'] != session]
+        self.server_list[gameid] = [x for x in self.server_list[gameid] if x['__session__'] != session]
         count -= len(self.server_list[gameid])
-        logger.log(logging.DEBUG,
-                   "Deleted %d %s servers where session = %d",
-                   count, gameid, session)
+        logger.log(logging.DEBUG, "Deleted %d %s servers where session = %d", count, gameid, session)
 
     def find_server_by_address(self, ip, port, gameid=None):
         if gameid is None:
@@ -550,13 +506,9 @@ class GameSpyBackendServer(object):
             best_match = None
 
             for server in self.server_list[gameid]:
-                logger.log(logging.DEBUG,
-                           "publicip: %s == %s ? %d localport: %s == %s ? %d",
-                           server['publicip'], publicip,
-                           server['publicip'] == publicip,
-                           server['localport'],
-                           str(localport),
-                           server['localport'] == str(localport))
+                ip = server['publicip']
+                port = server['localport']
+                logger.log(logging.DEBUG, "publicip: %s == %s ? %d localport: %s == %s ? %d", ip, publicip, ip == publicip, port, str(localport), port == str(localport))
                 if server['publicip'] == publicip:
                     if server['localport'] == str(localport):
                         best_match = server
@@ -578,9 +530,7 @@ class GameSpyBackendServer(object):
                         best_match = server
 
             if best_match is None:
-                logger.log(logging.DEBUG,
-                           "Couldn't find a match for %s",
-                           publicip)
+                logger.log(logging.DEBUG, "Couldn't find a match for %s", publicip)
 
             return best_match
 

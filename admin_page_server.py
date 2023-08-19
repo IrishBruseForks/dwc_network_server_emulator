@@ -37,7 +37,6 @@ import dwc_config
 logger = dwc_config.get_logger('AdminPage')
 _, port = dwc_config.get_ip_port('AdminPage')
 
-
 # Example of adminpageconf.json
 #
 # {"username":"admin","password":"opensesame"}
@@ -55,16 +54,14 @@ if os.path.exists('adminpageconf.json'):
         admin_username = str(adminpageconf['username'])
         admin_password = str(adminpageconf['password'])
     except Exception as e:
-        logger.log(logging.WARNING,
-                   "Couldn't read adminpageconf.json. "
+        logger.log(logging.WARNING, "Couldn't read adminpageconf.json. "
                    "Admin page will not be available.")
         logger.log(logging.WARNING, str(e))
         adminpageconf = None
         admin_username = None
         admin_password = None
 else:
-    logger.log(logging.INFO,
-               "adminpageconf.json not found. "
+    logger.log(logging.INFO, "adminpageconf.json not found. "
                "Admin page will not be available.")
 
 
@@ -86,10 +83,7 @@ class AdminPage(resource.Resource):
             <p>
                 %s | %s | %s
             </p>
-        """ % (title,
-               '<a href="/banhammer">All Users</a>',
-               '<a href="/consoles">Consoles</a>',
-               '<a href="/banlist">Active Bans</a>')
+        """ % (title, '<a href="/banhammer">All Users</a>', '<a href="/consoles">Consoles</a>', '<a href="/banlist">Active Bans</a>')
         return s
 
     def get_footer(self):
@@ -105,9 +99,7 @@ class AdminPage(resource.Resource):
         error_message = "Authorization required!"
         address = request.getClientIP()
         try:
-            expected_auth = base64.encodestring(
-                admin_username + ":" + admin_password
-            ).strip()
+            expected_auth = base64.encodestring(admin_username + ":" + admin_password).strip()
             actual_auth = request.getAllHeaders()['authorization'] \
                 .replace("Basic ", "") \
                 .strip()
@@ -131,9 +123,7 @@ class AdminPage(resource.Resource):
         actiontype = request.args['action'][0]
         if not gameid.isalnum():
             request.setResponseCode(500)
-            logger.log(logging.INFO,
-                       "%s Bad data %s %s",
-                       address, gameid, ipaddr)
+            logger.log(logging.INFO, "%s Bad data %s %s", address, gameid, ipaddr)
             return "Bad data"
 
         # This strips the region identifier from game IDs, not sure if this
@@ -142,16 +132,10 @@ class AdminPage(resource.Resource):
             gameid = gameid[:-1]
 
         if actiontype == 'ban':
-            dbconn.cursor().execute(
-                'INSERT INTO banned VALUES(?,?)',
-                (gameid, ipaddr)
-            )
+            dbconn.cursor().execute('INSERT INTO banned VALUES(?,?)', (gameid, ipaddr))
             responsedata = "Added gameid=%s, ipaddr=%s" % (gameid, ipaddr)
         else:
-            dbconn.cursor().execute(
-                'DELETE FROM banned WHERE gameid=? AND ipaddr=?',
-                (gameid, ipaddr)
-            )
+            dbconn.cursor().execute('DELETE FROM banned WHERE gameid=? AND ipaddr=?', (gameid, ipaddr))
             responsedata = "Removed gameid=%s, ipaddr=%s" % (gameid, ipaddr)
         dbconn.commit()
         dbconn.close()
@@ -176,30 +160,15 @@ class AdminPage(resource.Resource):
             logger.log(logging.INFO, "%s Bad data %s", address, macadr)
             return "Bad data"
         if actiontype == 'add':
-            dbconn.cursor().execute(
-                'INSERT INTO pending VALUES(?)',
-                (macadr,)
-            )
-            dbconn.cursor().execute(
-                'INSERT INTO registered VALUES(?)',
-                (macadr,)
-            )
+            dbconn.cursor().execute('INSERT INTO pending VALUES(?)', (macadr, ))
+            dbconn.cursor().execute('INSERT INTO registered VALUES(?)', (macadr, ))
             responsedata = "Added macadr=%s" % (macadr)
         elif actiontype == 'activate':
-            dbconn.cursor().execute(
-                'INSERT INTO registered VALUES(?)',
-                (macadr,)
-            )
+            dbconn.cursor().execute('INSERT INTO registered VALUES(?)', (macadr, ))
             responsedata = "Activated console belonging to %s" % (macadr)
         else:
-            dbconn.cursor().execute(
-                'DELETE FROM pending WHERE macadr=?',
-                (macadr,)
-            )
-            dbconn.cursor().execute(
-                'DELETE FROM registered WHERE macadr=?',
-                (macadr,)
-            )
+            dbconn.cursor().execute('DELETE FROM pending WHERE macadr=?', (macadr, ))
+            dbconn.cursor().execute('DELETE FROM registered WHERE macadr=?', (macadr, ))
             responsedata = "Removed macadr=%s" % (macadr)
         dbconn.commit()
         dbconn.close()
@@ -273,7 +242,7 @@ class AdminPage(resource.Resource):
         dbconn = sqlite3.connect('gpcm.db')
         banned_list = []
         for row in dbconn.cursor().execute("SELECT * FROM BANNED"):
-            banned_list.append(str(row[0])+":"+str(row[1]))
+            banned_list.append(str(row[0]) + ":" + str(row[1]))
         responsedata = """
         <a href="http://%%20:%%20@%s">[CLICK HERE TO LOG OUT]</a>
         <br><br>
@@ -319,13 +288,7 @@ class AdminPage(resource.Resource):
                 <td>%s</td>
                 <td>%s</td>
                 <td>%s</td>
-            """ % (ingamesn,
-                   gameid,
-                   enabled,
-                   dwc_pid,
-                   gsbrcd,
-                   userid,
-                   ipaddr)
+            """ % (ingamesn, gameid, enabled, dwc_pid, gsbrcd, userid, ipaddr)
             if gameid[:-1] + ":" + ipaddr in banned_list:
                 responsedata += """
                     <td>
@@ -363,26 +326,18 @@ class AdminPage(resource.Resource):
         ingamesn = request.args['ingamesn'][0]
 
         if not userid.isdigit() or not gameid.isalnum():
-            logger.log(logging.INFO,
-                       "%s Bad data %s %s",
-                       address, userid, gameid)
+            logger.log(logging.INFO, "%s Bad data %s %s", address, userid, gameid)
             return "Bad data"
 
         dbconn = sqlite3.connect('gpcm.db')
         if enable:
-            dbconn.cursor().execute(
-                'UPDATE users SET enabled=1 '
-                'WHERE gameid=? AND userid=?',
-                (gameid, userid)
-            )
+            dbconn.cursor().execute('UPDATE users SET enabled=1 '
+                                    'WHERE gameid=? AND userid=?', (gameid, userid))
             responsedata = "Enabled %s with gameid=%s, userid=%s" % \
                            (ingamesn, gameid, userid)
         else:
-            dbconn.cursor().execute(
-                'UPDATE users SET enabled=0 '
-                'WHERE gameid=? AND userid=?',
-                (gameid, userid)
-            )
+            dbconn.cursor().execute('UPDATE users SET enabled=0 '
+                                    'WHERE gameid=? AND userid=?', (gameid, userid))
             responsedata = "Disabled %s with gameid=%s, userid=%s" % \
                            (ingamesn, gameid, userid)
         dbconn.commit()
@@ -400,17 +355,14 @@ class AdminPage(resource.Resource):
         for row in dbconn.cursor().execute("SELECT * FROM REGISTERED"):
             active_list.append(str(row[0]))
         logger.log(logging.INFO, "%s Viewed console list", address)
-        responsedata = (
-            '<a href="http://%20:%20@' + request.getHeader('host') +
-            '">[CLICK HERE TO LOG OUT]</a>'
-            "<form action='updateconsolelist' method='POST'>"
-            "macadr:<input type='text' name='macadr'>\r\n"
-            "<input type='hidden' name='action' value='add'>\r\n"
-            "<input type='submit' value='Register and activate console'>"
-            "</form>\r\n"
-            "<table border='1'>"
-            "<tr><td>macadr</td></tr>\r\n"
-        )
+        responsedata = ('<a href="http://%20:%20@' + request.getHeader('host') + '">[CLICK HERE TO LOG OUT]</a>'
+                        "<form action='updateconsolelist' method='POST'>"
+                        "macadr:<input type='text' name='macadr'>\r\n"
+                        "<input type='hidden' name='action' value='add'>\r\n"
+                        "<input type='submit' value='Register and activate console'>"
+                        "</form>\r\n"
+                        "<table border='1'>"
+                        "<tr><td>macadr</td></tr>\r\n")
         for row in dbconn.cursor().execute("SELECT * FROM pending"):
             macadr = str(row[0])
             if macadr in active_list:
@@ -478,12 +430,11 @@ class AdminPage(resource.Resource):
 
 
 class AdminPageServer(object):
+
     def start(self):
         site = server.Site(AdminPage(self))
         reactor.listenTCP(port, site)
-        logger.log(logging.INFO,
-                   "Now listening for connections on port %d...",
-                   port)
+        logger.log(logging.INFO, "Now listening for connections on port %d...", port)
         try:
             if not reactor.running:
                 reactor.run(installSignalHandlers=0)

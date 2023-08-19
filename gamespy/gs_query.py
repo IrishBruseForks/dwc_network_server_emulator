@@ -73,11 +73,7 @@ def create_gamespy_message_from_dict(messages):
     cmd_val = messages.get("__cmd_val__", "")
 
     l = [("__cmd__", cmd), ("__cmd_val__", cmd_val)]
-    l.extend([
-        (key, value)
-        for key, value in list(messages.items())
-        if key not in (cmd, "__cmd__", "__cmd_val__")
-    ])
+    l.extend([(key, value) for key, value in list(messages.items()) if key not in (cmd, "__cmd__", "__cmd_val__")])
 
     return l
 
@@ -96,8 +92,7 @@ def create_gamespy_message_from_list(messages):
         elif message[0] == "__cmd_val__":
             cmd_val = str(message[1]).strip('\\')
         else:
-            query += "\\%s\\%s" % (str(message[0]).strip('\\'),
-                                   str(message[1]).strip('\\'))
+            query += "\\%s\\%s" % (str(message[0]).strip('\\'), str(message[1]).strip('\\'))
 
     if cmd:
         # Prepend the main command if one was found.

@@ -72,17 +72,13 @@ class RegPage(resource.Resource):
         macadr = request.args['macadr'][0].strip()
         actiontype = request.args['action'][0]
         macadr = macadr.lower()
-        if not re.match("[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
-                        macadr):
+        if not re.match("[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", macadr):
             request.setResponseCode(500)
             return "The MAC you entered was invalid." \
                    "Please click the back button and try again!"
         macadr = macadr.replace(":", "").replace("-", "")
         if actiontype == 'add':
-            dbconn.cursor().execute(
-                'INSERT INTO pending VALUES(?)',
-                (macadr,)
-            )
+            dbconn.cursor().execute('INSERT INTO pending VALUES(?)', (macadr, ))
             responsedata = "Added %s to pending list." % (macadr)
             responsedata += "Please close this window now."
             " It's also not a bad idea to check back on the status of your"
@@ -131,12 +127,11 @@ class RegPage(resource.Resource):
 
 
 class RegPageServer(object):
+
     def start(self):
         site = server.Site(RegPage(self))
         reactor.listenTCP(port, site)
-        logger.log(logging.INFO,
-                   "Now listening for connections on port %d...",
-                   port)
+        logger.log(logging.INFO, "Now listening for connections on port %d...", port)
         try:
             if not reactor.running:
                 reactor.run(installSignalHandlers=0)

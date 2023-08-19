@@ -24,7 +24,6 @@ import time
 
 from gamespy.gs_database import GamespyDatabase
 
-
 # If a game from this list requests a file listing, the server will return
 # that only one exists and return a random one.
 # This is used for Mystery Gift distribution on Generation 4 Pokemon games
@@ -49,7 +48,7 @@ gamecodes_return_random_file = [
     'IPGI',
     'IPGJ',
     'IPGK',
-    'IPGS'
+    'IPGS',
 ]
 
 filter_bit_g5 = {
@@ -64,8 +63,7 @@ def get_file_count(data):
     return sum(1 for line in data.splitlines() if line)
 
 
-def filter_list(data, attr1=None, attr2=None, attr3=None,
-                num=None, offset=None):
+def filter_list(data, attr1=None, attr2=None, attr3=None, num=None, offset=None):
     """Filter the list based on the attribute fields.
 
     If nothing matches, at least return a newline.
@@ -78,6 +76,7 @@ def filter_list(data, attr1=None, attr2=None, attr3=None,
 
     def attrs(data):
         """Filter attrs."""
+
         def nc(a, b):
             """Filter nc."""
             return a is None or a == b
@@ -86,6 +85,7 @@ def filter_list(data, attr1=None, attr2=None, attr3=None,
             nc(attr1, data[2]) and \
             nc(attr2, data[3]) and \
             nc(attr3, data[4])
+
     output = [line for line in data.splitlines() if attrs(line.split("\t"))]
 
     if offset is not None:
@@ -188,10 +188,7 @@ def download_list(dlc_path, post):
     else:
         # Doesn't have _list.txt file
         try:
-            ls = [
-                download_size(dlc_path, name)
-                for name in sorted(os.listdir(dlc_path))
-            ]
+            ls = [download_size(dlc_path, name) for name in sorted(os.listdir(dlc_path))]
             list_data = "\r\n".join("\t\t\t\t\t".join(f) for f in ls) + "\r\n"
         except:
             return "\r\n"

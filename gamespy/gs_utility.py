@@ -38,8 +38,8 @@ def generate_secret_keys(filename="gslist.cfg"):
         for line in key_file.readlines():
             # name = line[:54].strip()
             # Probably won't do anything with the name for now.
-            id = line[54:54+19].strip()
-            key = line[54+19:].strip()
+            id = line[54:54 + 19].strip()
+            key = line[54 + 19:].strip()
 
             secret_key_list[id] = key
 
@@ -132,11 +132,11 @@ def login_profile_via_parsed_authtoken(authtoken_parsed, db):
     console = 0
     userid = authtoken_parsed['userid']
 
-    csnum = authtoken_parsed.get('csnum', '')      # Wii: Serial number
-    cfc = authtoken_parsed.get('cfc', '')          # Wii: Friend code
-    bssid = authtoken_parsed.get('bssid', '')      # NDS: Wifi network's BSSID
+    csnum = authtoken_parsed.get('csnum', '')  # Wii: Serial number
+    cfc = authtoken_parsed.get('cfc', '')  # Wii: Friend code
+    bssid = authtoken_parsed.get('bssid', '')  # NDS: Wifi network's BSSID
     devname = authtoken_parsed.get('devname', '')  # NDS: Device name
-    birth = authtoken_parsed.get('birth', '')      # NDS: User's birthday
+    birth = authtoken_parsed.get('birth', '')  # NDS: User's birthday
 
     # The Wii does not use passwd, so take another uniquely generated string
     # as the password.
@@ -163,9 +163,7 @@ def login_profile_via_parsed_authtoken(authtoken_parsed, db):
 
     valid_user = db.check_user_exists(userid, gsbrcd)
     if valid_user is False:
-        profileid = db.create_user(userid, password, email, uniquenick,
-                                   gsbrcd, console, csnum, cfc, bssid,
-                                   devname, birth, gameid, macadr)
+        profileid = db.create_user(userid, password, email, uniquenick, gsbrcd, console, csnum, cfc, bssid, devname, birth, gameid, macadr)
     else:
         profileid = db.perform_login(userid, password, gsbrcd)
 
@@ -278,7 +276,7 @@ class EncTypeX:
         rnd = ~int(time.time())
 
         for i in range(tmp_len):
-            rnd = (rnd * 0x343FD) + 0x269EC3
+            rnd = (rnd*0x343FD) + 0x269EC3
             data[i] = (rnd ^ key[i % keylen] ^ validate[i % vallen]) & 0xff
 
         header_len = 7
@@ -311,13 +309,7 @@ class EncTypeX:
         if data_len < (header_len + data_start):
             return None
 
-        data = self.enctypex_funcx(
-            encxkey,
-            bytearray(key),
-            bytearray(validate),
-            data[header_len:],
-            data_start
-        )
+        data = self.enctypex_funcx(encxkey, bytearray(key), bytearray(validate), data[header_len:], data_start)
 
         return data[data_start:]
 

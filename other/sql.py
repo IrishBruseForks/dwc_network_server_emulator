@@ -22,6 +22,7 @@ class Infix(object):
 
     A |Infix| B
     """
+
     def __init__(self, function):
         self.function = function
 

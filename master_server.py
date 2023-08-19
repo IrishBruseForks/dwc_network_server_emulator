@@ -39,7 +39,6 @@ import gamespy.gs_database as gs_database
 
 import threading
 
-
 if __name__ == "__main__":
     """Let database initialize before starting any servers.
 

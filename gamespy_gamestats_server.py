@@ -41,14 +41,12 @@ address = dwc_config.get_ip_port('GameSpyGamestatsServer')
 
 
 class GameSpyGamestatsServer(object):
+
     def __init__(self):
         pass
 
     def start(self):
-        endpoint_search = serverFromString(
-            reactor,
-            "tcp:%d:interface=%s" % (address[1], address[0])
-        )
+        endpoint_search = serverFromString(reactor, "tcp:%d:interface=%s" % (address[1], address[0]))
         conn_search = endpoint_search.listen(GamestatsFactory())
 
         try:
@@ -59,10 +57,9 @@ class GameSpyGamestatsServer(object):
 
 
 class GamestatsFactory(Factory):
+
     def __init__(self):
-        logger.log(logging.INFO,
-                   "Now listening for connections on %s:%d...",
-                   address[0], address[1])
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", address[0], address[1])
         self.sessions = {}
 
     def buildProtocol(self, address):
@@ -70,6 +67,7 @@ class GamestatsFactory(Factory):
 
 
 class Gamestats(LineReceiver):
+
     def __init__(self, sessions, address):
         self.setRawMode()  # We're dealing with binary data so set to raw mode
 
@@ -91,33 +89,21 @@ class Gamestats(LineReceiver):
     def log(self, level, msg, *args, **kwargs):
         if not self.session:
             if not self.gameid:
-                logger.log(level, "[%s:%d] " + msg,
-                           self.address.host, self.address.port,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d] " + msg, self.address.host, self.address.port, *args, **kwargs)
             else:
-                logger.log(level, "[%s:%d | %s] " + msg,
-                           self.address.host, self.address.port, self.gameid,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d | %s] " + msg, self.address.host, self.address.port, self.gameid, *args, **kwargs)
         else:
             if not self.gameid:
-                logger.log(level, "[%s:%d | %s] " + msg,
-                           self.address.host, self.address.port, self.session,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d | %s] " + msg, self.address.host, self.address.port, self.session, *args, **kwargs)
             else:
-                logger.log(level, "[%s:%d | %s | %s] " + msg,
-                           self.address.host, self.address.port, self.session,
-                           self.gameid, *args, **kwargs)
+                logger.log(level, "[%s:%d | %s | %s] " + msg, self.address.host, self.address.port, self.session, self.gameid, *args, **kwargs)
 
     def connectionMade(self):
         try:
-            self.log(logging.INFO,
-                     "Received connection from %s:%d",
-                     self.address.host, self.address.port)
+            self.log(logging.INFO, "Received connection from %s:%d", self.address.host, self.address.port)
 
             # Generate a random challenge string
-            self.challenge = utils.generate_random_str(
-                10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            )
+            self.challenge = utils.generate_random_str(10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
             # The first command sent to the client is always a login challenge
             # containing the server challenge key.
@@ -133,9 +119,7 @@ class Gamestats(LineReceiver):
             msg = self.crypt(msg)
             self.transport.write(bytes(msg))
         except:
-            self.log(logging.ERROR,
-                     "Unknown exception: %s",
-                     traceback.format_exc())
+            self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def connectionLost(self, reason):
         return
@@ -157,18 +141,17 @@ class Gamestats(LineReceiver):
             logger.log(logging.DEBUG, "STATS RESPONSE: %s", msg)
 
             cmds = {
-                "auth":    self.perform_auth,
-                "authp":   self.perform_authp,
-                "ka":      self.perform_ka,
-                "setpd":   self.perform_setpd,
-                "getpd":   self.perform_getpd,
+                "auth": self.perform_auth,
+                "authp": self.perform_authp,
+                "ka": self.perform_ka,
+                "setpd": self.perform_setpd,
+                "getpd": self.perform_getpd,
                 "newgame": self.perform_newgame,
                 "updgame": self.perform_updgame,
             }
 
             def cmd_err(data_parsed):
-                logger.log(logging.DEBUG,
-                           "Found unknown command, don't know how to"
+                logger.log(logging.DEBUG, "Found unknown command, don't know how to"
                            " handle '%s'.", data_parsed['__cmd__'])
 
             for data_parsed in commands:
@@ -176,9 +159,7 @@ class Gamestats(LineReceiver):
 
                 cmds.get(data_parsed['__cmd__'], cmd_err)(data_parsed)
         except:
-            self.log(logging.ERROR,
-                     "Unknown exception: %s",
-                     traceback.format_exc())
+            self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def perform_auth(self, data_parsed):
         self.log(logging.DEBUG, "%s", "Parsing 'auth'...")
@@ -202,8 +183,7 @@ class Gamestats(LineReceiver):
         self.transport.write(bytes(msg))
 
     def perform_authp(self, data_parsed):
-        authtoken_parsed = gs_utils.parse_authtoken(data_parsed['authtoken'],
-                                                    self.db)
+        authtoken_parsed = gs_utils.parse_authtoken(data_parsed['authtoken'], self.db)
         # print authtoken_parsed
 
         if "lid" in data_parsed:
@@ -270,9 +250,7 @@ class Gamestats(LineReceiver):
 
         # TODO: Return error message.
         if int(data_parsed['pid']) != self.profileid:
-            logger.log(logging.WARNING,
-                       "ERROR: %d tried to update %d's profile",
-                       int(data_parsed['pid']), self.profileid)
+            logger.log(logging.WARNING, "ERROR: %d tried to update %d's profile", int(data_parsed['pid']), self.profileid)
             return
 
         data_str = "\\data\\"
@@ -288,20 +266,15 @@ class Gamestats(LineReceiver):
             idx = data.index(data_str) + len(data_str)
             data = data[idx:idx + length].rstrip("\\")
         else:
-            logger.log(logging.ERROR,
-                       "ERROR: Could not find \data\ in setpd command: %s",
-                       data)
+            logger.log(logging.ERROR, "ERROR: Could not find \data\ in setpd command: %s", data)
             data = ""
 
-        current_data = self.db.pd_get(self.profileid,
-                                      data_parsed['dindex'],
-                                      data_parsed['ptype'])
+        current_data = self.db.pd_get(self.profileid, data_parsed['dindex'], data_parsed['ptype'])
         if current_data and data and 'data' in current_data:
             current_data = current_data['data'].lstrip('\\').split('\\')
             new_data = data.lstrip('\\').split('\\')
 
-            current_data = dict(list(zip(current_data[0::2],
-                                    current_data[1::2])))
+            current_data = dict(list(zip(current_data[0::2], current_data[1::2])))
             new_data = dict(list(zip(new_data[0::2], new_data[1::2])))
             for k in list(new_data.keys()):
                 current_data[k] = new_data[k]
@@ -312,21 +285,14 @@ class Gamestats(LineReceiver):
                 data += k + "\\" + current_data[k] + "\\"
             data = data.rstrip("\\")  # Don't put trailing \ into db
 
-        self.db.pd_insert(self.profileid,
-                          data_parsed['dindex'],
-                          data_parsed['ptype'],
-                          data)
+        self.db.pd_insert(self.profileid, data_parsed['dindex'], data_parsed['ptype'], data)
 
     def perform_getpd(self, data_parsed):
         pid = int(data_parsed['pid'])
-        profile = self.db.pd_get(pid,
-                                 data_parsed['dindex'],
-                                 data_parsed['ptype'])
+        profile = self.db.pd_get(pid, data_parsed['dindex'], data_parsed['ptype'])
 
         if profile is None:
-            self.log(logging.WARNING,
-                     "Could not find profile for %d %s %s",
-                     pid, data_parsed['dindex'], data_parsed['ptype'])
+            self.log(logging.WARNING, "Could not find profile for %d %s %s", pid, data_parsed['dindex'], data_parsed['ptype'])
 
         keys = data_parsed['keys'].split('\x01')
 
@@ -346,9 +312,7 @@ class Gamestats(LineReceiver):
             if profile_data is not None:
                 profile_data = profile_data[0][0]
             else:
-                self.log(logging.WARNING,
-                         "Could not get data section from profile for %d",
-                         pid)
+                self.log(logging.WARNING, "Could not get data section from profile for %d", pid)
 
             if len(keys):
                 # TODO: more clean/pythonic way to do (join?)
@@ -360,9 +324,7 @@ class Gamestats(LineReceiver):
                     if profile_data is not None and key in profile_data:
                         data += profile_data[key]
             else:
-                self.log(logging.WARNING,
-                         "No keys requested, defaulting to all keys: %s",
-                         profile['data'])
+                self.log(logging.WARNING, "No keys requested, defaulting to all keys: %s", profile['data'])
                 data = profile['data']
 
         modified = int(time.time())
@@ -373,16 +335,7 @@ class Gamestats(LineReceiver):
             self.log(logging.WARNING, "Data after nul byte: %s", data)
 
         data = data_blocks[0]
-        msg = gs_query.create_gamespy_message([
-            ('__cmd__', "getpdr"),
-            ('__cmd_val__', 1),
-            ('lid', self.lid),
-            ('pid', pid),
-            ('mod', modified),
-            ('length', len(data)),
-            ('data', ''),
-            (data,)
-        ])
+        msg = gs_query.create_gamespy_message([('__cmd__', "getpdr"), ('__cmd_val__', 1), ('lid', self.lid), ('pid', pid), ('mod', modified), ('length', len(data)), ('data', ''), (data, )])
 
         if msg.count('\\') % 2:
             # An empty field must be terminated by \ before \final\

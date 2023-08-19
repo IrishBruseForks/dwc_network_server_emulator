@@ -37,14 +37,12 @@ address = dwc_config.get_ip_port('GameSpyPlayerSearchServer')
 
 
 class GameSpyPlayerSearchServer(object):
+
     def __init__(self):
         pass
 
     def start(self):
-        endpoint_search = serverFromString(
-            reactor,
-            "tcp:%d:interface=%s" % (address[1], address[0])
-        )
+        endpoint_search = serverFromString(reactor, "tcp:%d:interface=%s" % (address[1], address[0]))
         conn_search = endpoint_search.listen(PlayerSearchFactory())
 
         try:
@@ -55,16 +53,16 @@ class GameSpyPlayerSearchServer(object):
 
 
 class PlayerSearchFactory(Factory):
+
     def __init__(self):
-        logger.log(logging.INFO,
-                   "Now listening for player search connections on %s:%d...",
-                   address[0], address[1])
+        logger.log(logging.INFO, "Now listening for player search connections on %s:%d...", address[0], address[1])
 
     def buildProtocol(self, address):
         return PlayerSearch(address)
 
 
 class PlayerSearch(LineReceiver):
+
     def __init__(self, address):
         self.setRawMode()
         self.db = gs_database.GamespyDatabase()
@@ -91,14 +89,10 @@ class PlayerSearch(LineReceiver):
                 if data_parsed['__cmd__'] == "otherslist":
                     self.perform_otherslist(data_parsed)
                 else:
-                    logger.log(logging.DEBUG,
-                               "Found unknown search command, don't know"
-                               " how to handle '%s'.",
-                               data_parsed['__cmd__'])
+                    logger.log(logging.DEBUG, "Found unknown search command, don't know"
+                               " how to handle '%s'.", data_parsed['__cmd__'])
         except:
-            logger.log(logging.ERROR,
-                       "Unknown exception: %s",
-                       traceback.format_exc())
+            logger.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def perform_otherslist(self, data_parsed):
         """Reference: http://wiki.tockdom.com/wiki/MKWii_Network_Protocol/Server/gpsp.gs.nintendowifi.net
@@ -139,9 +133,7 @@ class PlayerSearch(LineReceiver):
             numopids = int(data_parsed['numopids'])
             opids = data_parsed['opids'].split('|')
             if len(opids) != numopids and int(opids[0]):
-                logger.log(logging.ERROR,
-                           "Unexpected number of opids, got %d, expected %d.",
-                           len(opids), numopids)
+                logger.log(logging.ERROR, "Unexpected number of opids, got %d, expected %d.", len(opids), numopids)
 
             # Return all uniquenicks despite any unexpected/missing opids
             # We can do better than that, I think...

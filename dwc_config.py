@@ -21,7 +21,6 @@
 Configuration module.
 """
 
-
 import configparser as ConfigParser
 
 import other.utils as utils
@@ -64,13 +63,13 @@ def get_logger(section, filename='altwfc.cfg'):
     """Return the logger of the corresponding section."""
     config = ConfigParser.RawConfigParser(allow_no_value=True)
     config.read(get_config_filename(filename))
-    return utils.create_logger(
-        config.get(section, 'LoggerName'),
-        config.get(section, 'LoggerFilename'),
-        config.getint(section, 'LoggerLevel'),
-        config.getboolean(section, 'LoggerOutputConsole'),
-        config.getboolean(section, 'LoggerOutputFile')
-    )
+
+    LoggerName = config.get(section, 'LoggerName'),
+    LoggerFilename = config.get(section, 'LoggerFilename'),
+    LoggerLevel = config.getint(section, 'LoggerLevel'),
+    LoggerOutputConsole = config.getboolean(section, 'LoggerOutputConsole'),
+    LoggerOutputFile = config.getboolean(section, 'LoggerOutputFile')
+    return utils.create_logger(LoggerName, LoggerFilename, LoggerLevel, LoggerOutputConsole, LoggerOutputFile)
 
 
 def get_svchost(section, filename='altwfc.cfg'):

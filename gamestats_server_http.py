@@ -39,6 +39,7 @@ address = dwc_config.get_ip_port('GameStatsServerHttp')
 
 
 class GameStatsBase(object):
+
     def do_GET(self, conn, key, append_hash, append_text=""):
         try:
             conn.send_response(200)
@@ -67,9 +68,7 @@ class GameStatsBase(object):
 
             conn.wfile.write(ret)
         except:
-            logger.log(logging.ERROR,
-                       "Unknown exception: %s",
-                       traceback.format_exc())
+            logger.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def do_POST(self, conn, key):
         try:
@@ -82,50 +81,43 @@ class GameStatsBase(object):
             conn.wfile.write("")
 
         except:
-            logger.log(logging.ERROR,
-                       "Unknown exception: %s",
-                       traceback.format_exc())
+            logger.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
 
 class GameStatsVersion1(GameStatsBase):
+
     def do_GET(self, conn, key):
         super(self.__class__, self).do_GET(conn, key, False, "")
 
 
 class GameStatsVersion2(GameStatsBase):
+
     def do_GET(self, conn, key):
         super(self.__class__, self).do_GET(conn, key, True, "")
 
 
 class GameStatsVersion3(GameStatsBase):
+
     def do_GET(self, conn, key):
         super(self.__class__, self).do_GET(conn, key, True, "done")
 
 
 class GameStatsServer(object):
+
     def start(self):
-        httpd = GameStatsHTTPServer((address[0], address[1]),
-                                    GameStatsHTTPServerHandler)
-        logger.log(logging.INFO,
-                   "Now listening for connections on %s:%d...",
-                   address[0], address[1])
+        httpd = GameStatsHTTPServer((address[0], address[1]), GameStatsHTTPServerHandler)
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", address[0], address[1])
         httpd.serve_forever()
 
 
 class GameStatsHTTPServer(http.server.HTTPServer):
-    gamestats_list = [
-        GameStatsBase,
-        GameStatsVersion1,
-        GameStatsVersion2,
-        GameStatsVersion3
-    ]
+    gamestats_list = [GameStatsBase, GameStatsVersion1, GameStatsVersion2, GameStatsVersion3]
 
     def __init__(self, server_address, RequestHandlerClass):
         # self.db = gs_database.GamespyDatabase()
         self.gamelist = self.parse_key_file()
 
-        http.server.HTTPServer.__init__(self, server_address,
-                                           RequestHandlerClass)
+        http.server.HTTPServer.__init__(self, server_address, RequestHandlerClass)
 
     def parse_key_file(self, filename="gamestats.cfg"):
         gamelist = {}
@@ -144,12 +136,16 @@ class GameStatsHTTPServer(http.server.HTTPServer):
                 if int(s[1]) < len(self.gamestats_list):
                     gamestats = self.gamestats_list[int(s[1])]
 
-                gamelist[s[0]] = {'key': s[2], 'class': gamestats}
+                gamelist[s[0]] = {
+                    'key': s[2],
+                    'class': gamestats
+                }
 
         return gamelist
 
 
 class GameStatsHTTPServerHandler(http.server.BaseHTTPRequestHandler):
+
     def version_string(self):
         return "Nintendo Wii (http)"
 
@@ -163,9 +159,7 @@ class GameStatsHTTPServerHandler(http.server.BaseHTTPRequestHandler):
             game = self.server.gamelist[gameid]['class']()
             game.do_GET(self, self.server.gamelist[gameid]['key'])
         else:
-            logger.log(logging.DEBUG,
-                       "WARNING: Could not find '%s' in gamestats list",
-                       gameid)
+            logger.log(logging.DEBUG, "WARNING: Could not find '%s' in gamestats list", gameid)
             default = GameStatsBase()
             default.do_GET(self, "", False, "")
 

@@ -36,6 +36,7 @@ logger = dwc_config.get_logger('InternalStatsServer')
 class GameSpyServerDatabase(BaseManager):
     pass
 
+
 GameSpyServerDatabase.register("get_server_list")
 
 
@@ -57,11 +58,15 @@ class StatsPage(resource.Resource):
         <tr>
             <td>%s</td>
             <td><center>%d</center></td>
-        </tr>"""  # % (game, len(server_list[game]))
+        </tr>"""
+
+    # % (game, len(server_list[game]))
     footer = """</table>
     <br>
     <i>Last updated: %s</i><br>
-    </html>"""  # % (self.stats.get_last_update_time())
+    </html>"""
+
+    # % (self.stats.get_last_update_time())
 
     def __init__(self, stats):
         self.stats = stats
@@ -93,9 +98,7 @@ class StatsPage(resource.Resource):
         else:
             output = self.header
             if server_list is not None:
-                output += "".join(self.row % (game, len(server_list[game]))
-                                  for game in server_list
-                                  if server_list[game])
+                output += "".join(self.row % (game, len(server_list[game])) for game in server_list if server_list[game])
             output += self.footer % (self.stats.get_last_update_time())
 
         return output
@@ -107,6 +110,7 @@ class InternalStatsServer(object):
     Running on port 9001 by default: http://127.0.0.1:9001/
     Can be displayed in json format: http://127.0.0.1:9001/json
     """
+
     def __init__(self):
         self.last_update = 0
         self.next_update = 0
@@ -117,8 +121,7 @@ class InternalStatsServer(object):
     def start(self):
         manager_address = dwc_config.get_ip_port('GameSpyManager')
         manager_password = ""
-        self.server_manager = GameSpyServerDatabase(address=manager_address,
-                                                    authkey=manager_password)
+        self.server_manager = GameSpyServerDatabase(address=manager_address, authkey=manager_password)
         self.server_manager.connect()
 
         site = server.Site(StatsPage(self))

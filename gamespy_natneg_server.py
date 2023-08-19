@@ -57,9 +57,7 @@ GameSpyServerDatabase.register("delete_natneg_server")
 
 def handle_natneg(nn, recv_data, addr, socket):
     """Command: Unknown."""
-    logger.log(logging.DEBUG,
-               "Received unknown command %02x from %s:%d...",
-               ord(recv_data[7]), *addr)
+    logger.log(logging.DEBUG, "Received unknown command %02x from %s:%d...", ord(recv_data[7]), *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
 
@@ -129,9 +127,7 @@ def handle_natneg_init(nn, recv_data, addr, socket):
         # Get server info
         serveraddr = nn.get_server_addr(gameid, session_id, client)
         client_session['serveraddr'] = serveraddr
-        logger.log(logging.DEBUG,
-                   "Found server from local ip/port: %s from %d",
-                   serveraddr, session_id)
+        logger.log(logging.DEBUG, "Found server from local ip/port: %s from %d", serveraddr, session_id)
 
         # Get public port
         if client_session['serveraddr'] is not None:
@@ -150,18 +146,14 @@ def handle_natneg_init(nn, recv_data, addr, socket):
         output[7] = 0x05  # NN_CONNECT
         nn.write_queue.put((output, client_id_session['addr'], socket))
 
-        logger.log(logging.DEBUG,
-                   "Sent connection request to %s:%d...",
-                   *client_id_session['addr'])
+        logger.log(logging.DEBUG, "Sent connection request to %s:%d...", *client_id_session['addr'])
         logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
 
         # --- Send to other client
         # Get server info
         serveraddr = nn.get_server_addr(gameid, session_id, client_id)
         client_id_session['serveraddr'] = serveraddr
-        logger.log(logging.DEBUG,
-                   "Found server 2 from local ip/port: %s from %d",
-                   serveraddr, session_id)
+        logger.log(logging.DEBUG, "Found server 2 from local ip/port: %s from %d", serveraddr, session_id)
 
         # Get public port
         if client_id_session['serveraddr'] is not None:
@@ -180,9 +172,7 @@ def handle_natneg_init(nn, recv_data, addr, socket):
         output[7] = 0x05  # NN_CONNECT
         nn.write_queue.put((output, client_session['addr'], socket))
 
-        logger.log(logging.DEBUG,
-                   "Sent connection request to %s:%d...",
-                   *client_session['addr'])
+        logger.log(logging.DEBUG, "Sent connection request to %s:%d...", *client_session['addr'])
         logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
 
 
@@ -207,8 +197,7 @@ def handle_natneg_initack(nn, recv_data, addr, socket):
     ff 6d 16 b5       - Local IP? Dummy value?
     7d ea             - Local port? Hex speak of "Idea"? Dummy value?
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_INITACK (0x01)"
+    logger.log(logging.WARNING, "Received server record type command NN_INITACK (0x01)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -239,8 +228,7 @@ def handle_natneg_erttest(nn, recv_data, addr, socket):
     00 00 00 00       - NAT mapping scheme?
     00 (x50)          - Game name?
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_ERTTEST (0x02)"
+    logger.log(logging.WARNING, "Received server record type command NN_ERTTEST (0x02)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -286,8 +274,7 @@ def handle_natneg_stateupdate(nn, recv_data, addr, socket):
     Description:
     TODO
     """
-    logger.log(logging.WARNING,
-               "Received unimplemented command NN_STATEUPDATE (0x04)"
+    logger.log(logging.WARNING, "Received unimplemented command NN_STATEUPDATE (0x04)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
 
@@ -311,8 +298,7 @@ def handle_natneg_connect(nn, recv_data, addr, socket):
     42                - Got remote data
     00                - Finished
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_CONNECT (0x05)"
+    logger.log(logging.WARNING, "Received server record type command NN_CONNECT (0x05)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -340,9 +326,7 @@ def handle_natneg_connect_ack(nn, recv_data, addr, socket):
     """
     client_id = "%02x" % ord(recv_data[13])
     session_id = utils.get_int(recv_data, 8)
-    logger.log(logging.DEBUG,
-               "Received connected command from %s:%d...",
-               *addr)
+    logger.log(logging.DEBUG, "Received connected command from %s:%d...", *addr)
 
     if session_id in nn.session_list and \
        client_id in nn.session_list[session_id]:
@@ -369,8 +353,7 @@ def handle_natneg_connect_ping(nn, recv_data, addr, socket):
     ??                - Sequence counter (0 or 1)
     ??                - Error
     """
-    logger.log(logging.WARNING,
-               "Received unimplemented command NN_CONNECT_PING (0x07)"
+    logger.log(logging.WARNING, "Received unimplemented command NN_CONNECT_PING (0x07)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -407,8 +390,7 @@ def handle_natneg_backup_ack(nn, recv_data, addr, socket):
     Description:
     TODO
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_BACKUP_ACK (0x09)"
+    logger.log(logging.WARNING, "Received server record type command NN_BACKUP_ACK (0x09)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
 
@@ -440,9 +422,7 @@ def handle_natneg_address_check(nn, recv_data, addr, socket):
     00 (x50)          - Game name?
     """
     client_id = "%02x" % ord(recv_data[13])
-    logger.log(logging.DEBUG,
-               "Received address check command from %s:%d...",
-               *addr)
+    logger.log(logging.DEBUG, "Received address check command from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
     output = bytearray(recv_data[0:15])
@@ -478,8 +458,7 @@ def handle_natneg_address_reply(nn, recv_data, addr, socket):
     25 c9 e2 8a       - Public IP
     91 e4             - Public port
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_ADDRESS_REPLY (0x0B)"
+    logger.log(logging.WARNING, "Received server record type command NN_ADDRESS_REPLY (0x0B)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
 
@@ -594,8 +573,7 @@ def handle_natneg_report_ack(nn, recv_data, addr, socket):
                                   0x05 - Symmetric,
                                   0x06 - Unknown)
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_REPORT_ACK (0x0E)"
+    logger.log(logging.WARNING, "Received server record type command NN_REPORT_ACK (0x0E)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -641,8 +619,7 @@ def handle_natneg_preinit(nn, recv_data, addr, socket):
         # I can't tell from a one sided packet capture of Pokemon.
         # For the time being, send to both clients just in case.
         output[13] = 2
-        nn.write_queue.put((output, nn.natneg_preinit_session[session],
-                            socket))
+        nn.write_queue.put((output, nn.natneg_preinit_session[session], socket))
 
         output[12] = (1, 0)[output[12]]  # Swap the index
         del nn.natneg_preinit_session[session]
@@ -678,8 +655,7 @@ def handle_natneg_preinit_ack(nn, recv_data, addr, socket):
                                0x02 - Ready)
     00 00 00 00       - Other client's session id (or empty)
     """
-    logger.log(logging.WARNING,
-               "Received server record type command NN_PREINIT_ACK (0x10)"
+    logger.log(logging.WARNING, "Received server record type command NN_PREINIT_ACK (0x10)"
                " from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -733,22 +709,13 @@ class GameSpyNatNegUDPServerHandler(socketserver.BaseRequestHandler):
 class GameSpyNatNegUDPServer(socketserver.UDPServer):
     """GameSpy NAT Negotiation server."""
 
-    def __init__(self,
-                 server_address=dwc_config.get_ip_port('GameSpyNatNegServer'),
-                 RequestHandlerClass=GameSpyNatNegUDPServerHandler,
-                 bind_and_activate=True):
-        socketserver.UDPServer.__init__(self,
-                                        server_address,
-                                        RequestHandlerClass,
-                                        bind_and_activate)
+    def __init__(self, server_address=dwc_config.get_ip_port('GameSpyNatNegServer'), RequestHandlerClass=GameSpyNatNegUDPServerHandler, bind_and_activate=True):
+        socketserver.UDPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
         self.session_list = {}
         self.natneg_preinit_session = {}
         self.secret_key_list = gs_utils.generate_secret_keys("gslist.cfg")
 
-        self.server_manager = GameSpyServerDatabase(
-            address=dwc_config.get_ip_port('GameSpyManager'),
-            authkey=""
-        )
+        self.server_manager = GameSpyServerDatabase(address=dwc_config.get_ip_port('GameSpyManager'), authkey="")
         self.server_manager.connect()
 
         self.write_queue = queue.Queue()
@@ -761,8 +728,7 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
     def write_queue_worker(self):
         while True:
             data, address, socket = self.write_queue.get()
-            threading.Thread(target=self.write_queue_send,
-                             args=(data, address, socket)).start()
+            threading.Thread(target=self.write_queue_send, args=(data, address, socket)).start()
             self.write_queue.task_done()
 
     def get_server_info(self, gameid, session_id, client_id):
@@ -792,11 +758,7 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
             if server is not None:
                 break
             ip = str(utils.get_ip_from_str(ip_str, console))
-            server = self.server_manager.find_server_by_local_address(
-                ip,
-                self.session_list[session_id][client_id]['localaddr'],
-                self.session_list[session_id][client_id]['gameid']
-            )._getvalue()
+            server = self.server_manager.find_server_by_local_address(ip, self.session_list[session_id][client_id]['localaddr'], self.session_list[session_id][client_id]['gameid'])._getvalue()
 
         return server
 
@@ -808,10 +770,10 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
 
 
 class GameSpyNatNegServer(object):
+
     def start(self):
         server = GameSpyNatNegUDPServer()
-        logger.log(logging.INFO, "Server is now listening on %s:%d...",
-                   *server.server_address)
+        logger.log(logging.INFO, "Server is now listening on %s:%d...", *server.server_address)
         server.serve_forever()
 
 
