@@ -166,7 +166,7 @@ def handle_ac(handler, addr, post):
                handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
-    action = str(post["action"]).lower()
+    action = post["action"].lower()
     command = handler.ac_actions.get(action, handle_ac_action)
     ret = command(handler, gs_database.GamespyDatabase(), addr, post)
 
@@ -239,7 +239,9 @@ class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             length = int(self.headers['content-length'])
-            post = utils.qs_to_dict(self.rfile.read(length))
+            qs = self.rfile.read(length).decode("ascii")
+            print(qs)
+            post = utils.qs_to_dict(qs)
             client_address = (
                 self.headers.get('x-forwarded-for', self.client_address[0]),
                 self.client_address[1]
@@ -252,7 +254,7 @@ class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
             if ret is not None:
                 self.send_header("Content-Length", str(len(ret)))
                 self.end_headers()
-                self.wfile.write(ret)
+                self.wfile.write(ret.encode("ascii"))
         except:
             logger.log(logging.ERROR, "Exception occurred on POST request!")
             logger.log(logging.ERROR, "%s", traceback.format_exc())

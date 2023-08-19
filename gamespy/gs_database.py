@@ -21,7 +21,6 @@
 
 import sqlite3
 import hashlib
-import itertools
 import json
 import time
 import logging
@@ -289,7 +288,7 @@ class GamespyDatabase(object):
             # TODO: Replace with something stronger later, although it's
             # overkill for the NDS.
             md5 = hashlib.md5()
-            md5.update(password)
+            md5.update(password.encode("ascii"))
             password = md5.hexdigest()
 
             with Transaction(self.conn) as tx:
@@ -531,7 +530,7 @@ class GamespyDatabase(object):
                 userid = "0" + userid
             return userid
 
-    def generate_authtoken(self, userid, data):
+    def generate_authtoken(self, userid, data: dict[str, str]):
         """Generate authentication token.
 
         Since the auth token passed back to the game will be random, we can
@@ -563,9 +562,9 @@ class GamespyDatabase(object):
             r = self.get_dict(row)
 
         if "devname" in data:
-            data["devname"] = gs_utils.base64_encode(data["devname"])
+            data["devname"] = gs_utils.base64_encode(data["devname"].encode("ascii"))
         if "ingamesn" in data:
-            data["ingamesn"] = gs_utils.base64_encode(data["ingamesn"])
+            data["ingamesn"] = gs_utils.base64_encode(data["ingamesn"].encode("ascii"))
 
         data = json.dumps(data)
 

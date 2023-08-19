@@ -30,25 +30,22 @@ import os
 from functools import reduce
 
 
-def generate_random_str_from_set(ln, chs):
+def generate_random_str_from_set(ln, chs) -> str:
     """Generate a random string of size <ln> based on charset <chs>."""
     return ''.join(random.choice(chs) for _ in range(ln))
 
 
-def generate_random_str(ln, chs=""):
+def generate_random_str(ln, chs="") -> str:
     """Generate a random string of size <ln>."""
-    return generate_random_str_from_set(
-        ln,
-        chs or (string.ascii_letters + string.digits)
-    )
+    return generate_random_str_from_set(ln,        chs or (string.ascii_letters + string.digits))
 
 
-def generate_random_number_str(ln):
+def generate_random_number_str(ln) -> str:
     """Generate a random number string of size <ln>."""
     return generate_random_str_from_set(ln, string.digits)
 
 
-def generate_random_hex_str(ln):
+def generate_random_hex_str(ln) -> str:
     """Generate a random hexadecimal number string of size <ln>."""
     return generate_random_str_from_set(ln, string.hexdigits.lower())
 
@@ -122,7 +119,7 @@ def get_num_from_bytes(data, idx, fmt, bigEndian=False):
 
     Endianness by default is little.
     """
-    return struct.unpack_from("<>"[bigEndian] + fmt, buffer(bytearray(data)), idx)[0]
+    return struct.unpack_from("<>"[bigEndian] + fmt, bytearray(data), idx)[0]
 
 # Instead of passing slices, pass the buffer and index so we can calculate
 # the length automatically.
@@ -359,21 +356,19 @@ def pretty_print_hex(orig_data, cols=16, sep=' '):
 #    return output
 
 
-def qs_to_dict(s):
+def qs_to_dict(s: bytes):
     """Convert query string to dict."""
-    ret = urllib.parse.parse_qs(s, True)
+    parse = urllib.parse.parse_qs(s, True)
+    ret = {}
 
-    for k, v in list(ret.items()):
+    for k, v in parse.items():
         try:
             # I'm not sure about the replacement for '-', but it'll at
             # least let it be decoded.
             # For the most part it's not important since it's mostly
             # used for the devname/ingamesn fields.
-            ret[k] = base64.b64decode(urllib.parse.unquote(v[0])
-                                              .replace("*", "=")
-                                              .replace("?", "/")
-                                              .replace(">", "+")
-                                              .replace("-", "/"))
+            url = urllib.parse.unquote(v[0].encode("ascii")).replace("*", "=").replace("?", "/").replace(">", "+").replace("-", "/")
+            ret[k] = base64.b64decode(url)
         except TypeError:
             """
             print("Could not decode following string: ret[%s] = %s"
@@ -382,7 +377,7 @@ def qs_to_dict(s):
             """
             # If you don't assign it like this it'll be a list, which
             # breaks other code.
-            ret[k] = v[0]
+            ret[k.decode("ascii")] = v[0]
 
     return ret
 
@@ -394,6 +389,6 @@ def dict_to_qs(d):
     use encoding for special characters.
     """
     # Dictionary comprehension is used to not modify the original
-    ret = {k: base64.b64encode(v).replace("=", "*") for k, v in list(d.items())}
+    ret = {k: base64.b64encode(v.encode("ascii")).decode("ascii").replace("=", "*") for k, v in d.items()}
 
     return "&".join("{!s}={!s}".format(k, v) for k, v in list(ret.items())) + "\r\n"

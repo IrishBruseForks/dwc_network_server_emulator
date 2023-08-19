@@ -55,6 +55,7 @@ class ServerListFlags:
 class GameSpyServerDatabase(BaseManager):
     pass
 
+
 GameSpyServerDatabase.register("get_server_list")
 GameSpyServerDatabase.register("modify_server_list")
 GameSpyServerDatabase.register("find_servers")
@@ -154,7 +155,7 @@ class Session(LineReceiver):
                     # Don't have enough for the entire packet, break.
                     break
 
-                if packet[2] == '\x00':  # Server list request
+                if packet[2] == 0x0:  # Server list request
                     self.log(logging.DEBUG,
                              "Received server list request from %s:%s...",
                              self.address.host, self.address.port)
@@ -255,7 +256,7 @@ class Session(LineReceiver):
                         self.find_server(query_game, filter, fields,
                                          max_servers, game_name, challenge)
 
-                elif packet[2] == '\x02':  # Send message request
+                elif packet[2] == 0x2:  # Send message request
                     packet_len = utils.get_short(packet, 0, True)
                     dest_addr = '.'.join(["%d" % ord(x) for x in packet[3:7]])
                     # What's the pythonic way to do this? unpack?
@@ -279,7 +280,7 @@ class Session(LineReceiver):
                                  "%s",
                                  "ERROR: Could not find entire packet.")
 
-                elif packet[2] == '\x03':  # Keep alive reply
+                elif packet[2] == 0x3:  # Keep alive reply
                     self.log(logging.DEBUG,
                              "Received keep alive from %s:%s...",
                              self.address.host, self.address.port)

@@ -78,11 +78,11 @@ class PlayerSearch(LineReceiver):
     def connectionLost(self, reason):
         pass
 
-    def rawDataReceived(self, data):
+    def rawDataReceived(self, data: bytes):
         try:
             logger.log(logging.DEBUG, "SEARCH RESPONSE: %s", data)
 
-            data = self.leftover + data
+            data = self.leftover + data.decode("ascii")
             commands, self.leftover = gs_query.parse_gamespy_message(data)
 
             for data_parsed in commands:
@@ -158,7 +158,7 @@ class PlayerSearch(LineReceiver):
         msg = gs_query.create_gamespy_message(msg_d)
 
         logger.log(logging.DEBUG, "SENDING: %s", msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
 
 if __name__ == "__main__":

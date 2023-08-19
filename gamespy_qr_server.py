@@ -18,8 +18,11 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Server emulator for *.available.gs.nintendowifi.net and
-                    *.master.gs.nintendowifi.net
+Server emulator for
+
+*.available.gs.nintendowifi.net
+*.master.gs.nintendowifi.net
+
 Query and Reporting:
 http://docs.poweredbygamespy.com/wiki/Query_and_Reporting_Overview
 """
@@ -174,15 +177,12 @@ class GameSpyQRServer(object):
 
             # Some memory could be saved by clearing out any unwanted fields
             # from k before sending.
-            self.server_manager.update_server_list(
-                k['gamename'], session_id, k,
-                self.sessions[session_id].console
-            )._getvalue()
+            self.server_manager.update_server_list(k['gamename'], session_id, k, self.sessions[session_id].console)._getvalue()
 
             if session_id in self.sessions:
                 self.sessions[session_id].gamename = k['gamename']
 
-    def handle_packet(self, socket, recv_data, address):
+    def handle_packet(self, socket, recv_data: bytes, address):
         """Tetris DS overlay 10 @ 02144184 - Handle responses back to server.
 
         After some more packet inspection, it seems the format goes something
@@ -285,7 +285,7 @@ class GameSpyQRServer(object):
         Use as reference.
         """
         session_id = None
-        if recv_data[0] != '\x09':
+        if recv_data[0] != 0x09:
             # Don't add a session if the client is trying to check if the game
             # is available or not
             session_id = struct.unpack("<I", recv_data[1:5])[0]
@@ -306,12 +306,12 @@ class GameSpyQRServer(object):
                 self.sessions[session_id].keepalive = int(time.time())
 
         # Handle commands
-        if recv_data[0] == '\x00':  # Query
+        if recv_data[0] == 0x00:  # Query
             self.log(logging.DEBUG, address, session_id,
                      "NOT IMPLEMENTED! Received query from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x01':  # Challenge
+        elif recv_data[0] == 0x01:  # Challenge
             self.log(logging.DEBUG, address, session_id,
                      "Received challenge from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
@@ -350,19 +350,17 @@ class GameSpyQRServer(object):
                     session_id
                 )
 
-        elif recv_data[0] == '\x02':  # Echo
+        elif recv_data[0] == 0x02:  # Echo
             self.log(logging.DEBUG, address, session_id,
                      "NOT IMPLEMENTED! Received echo from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x03':  # Heartbeat
+        elif recv_data[0] == 0x03:  # Heartbeat
             data = recv_data[5:]
-            self.log(logging.DEBUG, address, session_id,
-                     "Received heartbeat from %s:%s... %s",
-                     address[0], address[1], data)
+            self.log(logging.DEBUG, address, session_id, "Received heartbeat from %s:%s...\n%s", address[0], address[1], data)
 
             # Parse information from heartbeat here
-            d = data.rstrip('\0').split('\0')
+            d = data.rstrip(b'\0').split(b'\0')
 
             # It may be safe to ignore "unknown" keys because the proper key
             # names get filled in later...
@@ -469,11 +467,9 @@ class GameSpyQRServer(object):
             if self.sessions[session_id].sent_challenge:
                 self.update_server_list(session_id, k)
             else:
-                addr_hex = ''.join(["%02X" % int(x)
-                                    for x in address[0].split('.')])
+                addr_hex = ''.join(["%02X" % int(x) for x in address[0].split('.')])
                 port_hex = "%04X" % int(address[1])
-                server_challenge = utils.generate_random_str(6) + '00' + \
-                    addr_hex + port_hex
+                server_challenge = utils.generate_random_str(6) + '00' + addr_hex + port_hex
 
                 self.sessions[session_id].challenge = server_challenge
 
@@ -481,8 +477,8 @@ class GameSpyQRServer(object):
                 packet = bytearray([0xfe, 0xfd, 0x01])
                 # Get the session ID
                 packet.extend(session_id_raw)
-                packet.extend(server_challenge)
-                packet.extend('\x00')
+                packet.extend(server_challenge.encode("ascii"))
+                packet.extend(b'0x00')
 
                 self.write_queue.put((packet, address))
                 self.log(logging.DEBUG, address, session_id,
@@ -492,23 +488,23 @@ class GameSpyQRServer(object):
                 self.sessions[session_id].sent_challenge = True
                 self.sessions[session_id].heartbeat_data = k
 
-        elif recv_data[0] == '\x04':  # Add Error
+        elif recv_data[0] == 0x04:  # Add Error
             self.log(logging.WARNING, address, session_id,
                      "NOT IMPLEMENTED! Received add error from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x05':  # Echo Response
+        elif recv_data[0] == 0x05:  # Echo Response
             self.log(logging.WARNING, address, session_id,
                      "NOT IMPLEMENTED! Received echo response"
                      " from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x06':  # Client Message
+        elif recv_data[0] == 0x06:  # Client Message
             self.log(logging.WARNING, address, session_id,
                      "NOT IMPLEMENTED! Received echo from %s:%s... %s",
                      address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x07':  # Client Message Ack
+        elif recv_data[0] == 0x07:  # Client Message Ack
             # self.log(logging.WARNING, address, session_id,
             #          "NOT IMPLEMENTED! Received client message ack"
             #          " from %s:%s... %s",
@@ -517,23 +513,21 @@ class GameSpyQRServer(object):
                      "Received client message ack from %s:%s...",
                      address[0], address[1])
 
-        elif recv_data[0] == '\x08':  # Keep Alive
+        elif recv_data[0] == 0x08:  # Keep Alive
             self.log(logging.DEBUG, address, session_id,
                      "Received keep alive from %s:%s...",
                      address[0], address[1])
             self.sessions[session_id].keepalive = int(time.time())
 
-        elif recv_data[0] == '\x09':  # Available
+        elif recv_data[0] == 0x09:  # Available
             # Availability check only sent to *.available.gs.nintendowifi.net
-            self.log(logging.DEBUG, address, session_id,
-                     "Received availability request for '%s' from %s:%s...",
-                     recv_data[5: -1], address[0], address[1])
+            self.log(logging.DEBUG, address, session_id, "Received availability request for '%s' from %s:%s...", recv_data[5: -1].decode("ascii"), address[0], address[1])
             self.write_queue.put((
                 bytearray([0xfe, 0xfd, 0x09, 0x00, 0x00, 0x00, 0x00]),
                 address
             ))
 
-        elif recv_data[0] == '\x0a':  # Client Registered
+        elif recv_data[0] == 0x0a:  # Client Registered
             # Only sent to client, never received?
             self.log(logging.WARNING, address, session_id,
                      "NOT IMPLEMENTED! Received client registered"

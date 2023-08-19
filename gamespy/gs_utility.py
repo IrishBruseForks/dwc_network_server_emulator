@@ -46,32 +46,29 @@ def generate_secret_keys(filename="gslist.cfg"):
     return secret_key_list
 
 
-def base64_encode(input):
+def base64_encode(input: bytes):
     """Encode input in base64 using GameSpy variant.
 
     GameSpy uses a slightly modified version of base64 which replaces
     +/= with []_
     """
-    output = base64.b64encode(input).replace('+', '[') \
-                                    .replace('/', ']') \
-                                    .replace('=', '_')
+    print(input)
+    output = base64.b64encode(input).decode("ascii").replace('+', '[').replace('/', ']').replace('=', '_')
     return output
 
 
 def base64_decode(input):
     """Decode input in base64 using GameSpy variant."""
-    output = base64.b64decode(input.replace('[', '+')
-                                   .replace(']', '/')
-                                   .replace('_', '='))
+    output = base64.b64decode(input.replace('[', '+').replace(']', '/').replace('_', '='))
     return output
 
 
-def rc4_encrypt(_key, _data):
+def rc4_encrypt(_key: str, _data):
     """
     Tetris DS overlay 10 @ 0216E9B8
     """
-    key = bytearray(_key)
-    data = bytearray(_data)
+    key = bytearray(_key.encode("ascii"))
+    data = bytearray(_data.encode("ascii"))
 
     if len(key) == 0:
         # This shouldn't happen but it apparently can on a rare occasion.
@@ -117,7 +114,7 @@ def prepare_rc4_base64(_key, _data):
 
     data.append(0)
 
-    return base64.b64encode(buffer(data))
+    return base64.b64encode(data)
 
 
 def parse_authtoken(authtoken, db):
@@ -175,10 +172,10 @@ def login_profile_via_parsed_authtoken(authtoken_parsed, db):
     return userid, profileid, gsbrcd, uniquenick
 
 
-def generate_response(challenge, ac_challenge, secretkey, authtoken):
+def generate_response(challenge, ac_challenge: str, secretkey, authtoken):
     """Generate a challenge response."""
     md5 = hashlib.md5()
-    md5.update(ac_challenge)
+    md5.update(ac_challenge.encode("ascii"))
 
     output = md5.hexdigest()
     output += ' ' * 0x30
@@ -188,7 +185,7 @@ def generate_response(challenge, ac_challenge, secretkey, authtoken):
     output += md5.hexdigest()
 
     md5_2 = hashlib.md5()
-    md5_2.update(output)
+    md5_2.update(output.encode("ascii"))
 
     return md5_2.hexdigest()
 
@@ -202,7 +199,7 @@ def generate_proof(challenge, ac_challenge, secretkey, authtoken):
     Maybe combine the two functions later?
     """
     md5 = hashlib.md5()
-    md5.update(ac_challenge)
+    md5.update(ac_challenge.encode("ascii"))
 
     output = md5.hexdigest()
     output += ' ' * 0x30
@@ -212,7 +209,7 @@ def generate_proof(challenge, ac_challenge, secretkey, authtoken):
     output += md5.hexdigest()
 
     md5_2 = hashlib.md5()
-    md5_2.update(output)
+    md5_2.update(output.encode("ascii"))
 
     return md5_2.hexdigest()
 
@@ -249,6 +246,7 @@ class EncTypeX:
     It's kind of sloppy in parts, but it works. Unless there's some issues
     then it'll probably not change any longer.
     """
+
     def __init__(self):
         return
 

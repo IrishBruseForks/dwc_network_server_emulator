@@ -1,27 +1,29 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2016 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2016 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
- Server emulator for *.available.gs.nintendowifi.net
-                 and *.master.gs.nintendowifi.net
- Query and Reporting:
- http://docs.poweredbygamespy.com/wiki/Query_and_Reporting_Overview
- http://wiki.tockdom.com/wiki/Server_NATNEG
+Server emulator for
+*.available.gs.nintendowifi.net
+*.master.gs.nintendowifi.net
+Query and Reporting:
+http://docs.poweredbygamespy.com/wiki/Query_and_Reporting_Overview
+http://wiki.tockdom.com/wiki/Server_NATNEG
 """
 
 import logging
@@ -41,6 +43,7 @@ logger = dwc_config.get_logger('GameSpyNatNegServer')
 
 class GameSpyServerDatabase(BaseManager):
     pass
+
 
 GameSpyServerDatabase.register("get_server_list")
 GameSpyServerDatabase.register("modify_server_list")
@@ -686,23 +689,23 @@ class GameSpyNatNegUDPServerHandler(socketserver.BaseRequestHandler):
 
     nn_magics = bytearray([0xfd, 0xfc, 0x1e, 0x66, 0x6a, 0xb2])
     nn_commands = {
-        '\x00': handle_natneg_init,
-        '\x01': handle_natneg_initack,
-        '\x02': handle_natneg_erttest,
-        '\x03': handle_natneg_ertack,
-        '\x04': handle_natneg_stateupdate,
-        '\x05': handle_natneg_connect,
-        '\x06': handle_natneg_connect_ack,
-        '\x07': handle_natneg_connect_ping,
-        '\x08': handle_natneg_backup_test,
-        '\x09': handle_natneg_backup_ack,
-        '\x0A': handle_natneg_address_check,
-        '\x0B': handle_natneg_address_reply,
-        '\x0C': handle_natneg_natify_request,
-        '\x0D': handle_natneg_report,
-        '\x0E': handle_natneg_report_ack,
-        '\x0F': handle_natneg_preinit,
-        '\x10': handle_natneg_preinit_ack
+        0x00: handle_natneg_init,
+        0x01: handle_natneg_initack,
+        0x02: handle_natneg_erttest,
+        0x03: handle_natneg_ertack,
+        0x04: handle_natneg_stateupdate,
+        0x05: handle_natneg_connect,
+        0x06: handle_natneg_connect_ack,
+        0x07: handle_natneg_connect_ping,
+        0x08: handle_natneg_backup_test,
+        0x09: handle_natneg_backup_ack,
+        0x0A: handle_natneg_address_check,
+        0x0B: handle_natneg_address_reply,
+        0x0C: handle_natneg_natify_request,
+        0x0D: handle_natneg_report,
+        0x0E: handle_natneg_report_ack,
+        0x0F: handle_natneg_preinit,
+        0x10: handle_natneg_preinit_ack
     }
 
     def handle(self):
@@ -768,10 +771,10 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
         ip_str = self.session_list[session_id][client_id]['addr'][0]
         servers = self.server_manager.get_natneg_server(session_id) \
                                      ._getvalue()
-        
+
         if servers is None:
             return None
-            
+
         for console in [False, True]:
             if server is not None:
                 break

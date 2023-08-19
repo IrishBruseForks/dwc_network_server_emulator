@@ -156,7 +156,7 @@ class PlayerSession(LineReceiver):
             ])
 
             self.log(logging.DEBUG, "SENDING: '%s'...", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
         except:
             self.log(logging.ERROR,
                      "Unknown exception: %s",
@@ -181,7 +181,7 @@ class PlayerSession(LineReceiver):
                      "Unknown exception: %s",
                      traceback.format_exc())
 
-    def rawDataReceived(self, data):
+    def rawDataReceived(self, data: bytes):
         try:
             self.log(logging.DEBUG, "RESPONSE: '%s'...", data)
 
@@ -190,7 +190,7 @@ class PlayerSession(LineReceiver):
             # stored in the variable remaining_message. On the next
             # rawDataReceived command, the remaining message and the data
             # are combined to create a full command.
-            data = self.remaining_message + data
+            data = self.remaining_message + data.decode("ascii")
 
             # Check to make sure the data buffer starts with a valid command.
             if len(data) > 0 and data[0] != '\\':
@@ -282,9 +282,7 @@ class PlayerSession(LineReceiver):
         if profileid is not None:
             # Successfully logged in or created account, continue
             # creating session.
-            loginticket = gs_utils.base64_encode(
-                utils.generate_random_str(16)
-            )
+            loginticket = gs_utils.base64_encode(utils.generate_random_str(16).encode("ascii"))
             self.sesskey = self.db.create_session(profileid, loginticket)
 
             self.sessions[profileid] = self
@@ -347,7 +345,7 @@ class PlayerSession(LineReceiver):
             self.profileid = int(profileid)
 
             self.log(logging.DEBUG, "SENDING: %s", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
             # Get pending messages.
             self.get_pending_messages()
@@ -456,11 +454,8 @@ class PlayerSession(LineReceiver):
     def perform_ka(self, data_parsed):
         self.keepalive = int(time.time())
 
-        msg = gs_query.create_gamespy_message([
-            ('__cmd__', "ka"),
-            ('__cmd_val__', ""),
-        ])
-        self.transport.write(msg)
+        msg = gs_query.create_gamespy_message([('__cmd__', "ka"), ('__cmd_val__', "")])
+        self.transport.write(msg.encode("ascii"))
 
     def perform_status(self, data_parsed):
         self.sesskey = data_parsed['sesskey']

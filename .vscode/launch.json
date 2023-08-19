@@ -15,6 +15,13 @@
         "PYDEVD_DISABLE_FILE_VALIDATION": "1"
       },
       "pythonArgs": ["-Xfrozen_modules=off"]
+    },
+    {
+      "name": "Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/reverseproxy/"
     }
   ]
 }
