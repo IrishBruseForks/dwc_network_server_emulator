@@ -24,9 +24,10 @@ import logging.handlers
 import random
 import string
 import struct
-import urlparse
+import urllib.parse
 import ctypes
 import os
+from functools import reduce
 
 
 def generate_random_str_from_set(ln, chs):
@@ -291,9 +292,9 @@ def print_hex(data, cols=16, sep=' ', pretty=True):
     Can be pretty printed but takes more time.
     """
     if pretty:
-        print pretty_print_hex(data, cols, sep)
+        print(pretty_print_hex(data, cols, sep))
     else:
-        print sep.join("%02x" % b for b in bytearray(data))
+        print(sep.join("%02x" % b for b in bytearray(data)))
 
 
 def pretty_print_hex(orig_data, cols=16, sep=' '):
@@ -360,15 +361,15 @@ def pretty_print_hex(orig_data, cols=16, sep=' '):
 
 def qs_to_dict(s):
     """Convert query string to dict."""
-    ret = urlparse.parse_qs(s, True)
+    ret = urllib.parse.parse_qs(s, True)
 
-    for k, v in ret.items():
+    for k, v in list(ret.items()):
         try:
             # I'm not sure about the replacement for '-', but it'll at
             # least let it be decoded.
             # For the most part it's not important since it's mostly
             # used for the devname/ingamesn fields.
-            ret[k] = base64.b64decode(urlparse.unquote(v[0])
+            ret[k] = base64.b64decode(urllib.parse.unquote(v[0])
                                               .replace("*", "=")
                                               .replace("?", "/")
                                               .replace(">", "+")
@@ -393,6 +394,6 @@ def dict_to_qs(d):
     use encoding for special characters.
     """
     # Dictionary comprehension is used to not modify the original
-    ret = {k: base64.b64encode(v).replace("=", "*") for k, v in d.items()}
+    ret = {k: base64.b64encode(v).replace("=", "*") for k, v in list(d.items())}
 
-    return "&".join("{!s}={!s}".format(k, v) for k, v in ret.items()) + "\r\n"
+    return "&".join("{!s}={!s}".format(k, v) for k, v in list(ret.items())) + "\r\n"

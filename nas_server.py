@@ -22,8 +22,8 @@
 
 import logging
 import time
-import BaseHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import traceback
 
 from gamespy import gs_database
@@ -205,7 +205,7 @@ def handle_pr(handler, addr, post):
     return utils.dict_to_qs(ret)
 
 
-class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
     """Nintendo NAS server handler."""
 
     post_paths = {
@@ -258,7 +258,7 @@ class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.log(logging.ERROR, "%s", traceback.format_exc())
 
 
-class NasHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class NasHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     """Threading HTTP server."""
     pass
 

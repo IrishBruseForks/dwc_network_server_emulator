@@ -30,7 +30,7 @@ import socket
 import struct
 import threading
 import time
-import Queue
+import queue
 import traceback
 
 from multiprocessing.managers import BaseManager
@@ -123,7 +123,7 @@ class GameSpyQRServer(object):
             )
             server_browser_server_thread.start()
 
-            self.write_queue = Queue.Queue()
+            self.write_queue = queue.Queue()
             self.db = gs_database.GamespyDatabase()
             threading.Thread(target=self.write_queue_worker).start()
 
@@ -386,7 +386,7 @@ class GameSpyQRServer(object):
                         # base64 string anyway)
                         self.sessions[session_id].ingamesn = \
                             str(naslogin['ingamesn'])
-                    except Exception, e:
+                    except Exception as e:
                         # If the game doesn't have, don't worry about it.
                         pass
 

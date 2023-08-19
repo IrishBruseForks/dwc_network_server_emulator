@@ -86,7 +86,7 @@ def filter_list(data, attr1=None, attr2=None, attr3=None,
             nc(attr1, data[2]) and \
             nc(attr2, data[3]) and \
             nc(attr3, data[4])
-    output = filter(lambda line: attrs(line.split("\t")), data.splitlines())
+    output = [line for line in data.splitlines() if attrs(line.split("\t"))]
 
     if offset is not None:
         output = output[offset:]

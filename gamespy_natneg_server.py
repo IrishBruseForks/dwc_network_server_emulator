@@ -25,10 +25,10 @@
 """
 
 import logging
-import SocketServer
+import socketserver
 import threading
 import time
-import Queue
+import queue
 import gamespy.gs_utility as gs_utils
 import other.utils as utils
 import traceback
@@ -681,7 +681,7 @@ def handle_natneg_preinit_ack(nn, recv_data, addr, socket):
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
 
-class GameSpyNatNegUDPServerHandler(SocketServer.BaseRequestHandler):
+class GameSpyNatNegUDPServerHandler(socketserver.BaseRequestHandler):
     """GameSpy NAT Negotiation handler."""
 
     nn_magics = bytearray([0xfd, 0xfc, 0x1e, 0x66, 0x6a, 0xb2])
@@ -727,14 +727,14 @@ class GameSpyNatNegUDPServerHandler(SocketServer.BaseRequestHandler):
             logger.log(logging.ERROR, "%s", traceback.format_exc())
 
 
-class GameSpyNatNegUDPServer(SocketServer.UDPServer):
+class GameSpyNatNegUDPServer(socketserver.UDPServer):
     """GameSpy NAT Negotiation server."""
 
     def __init__(self,
                  server_address=dwc_config.get_ip_port('GameSpyNatNegServer'),
                  RequestHandlerClass=GameSpyNatNegUDPServerHandler,
                  bind_and_activate=True):
-        SocketServer.UDPServer.__init__(self,
+        socketserver.UDPServer.__init__(self,
                                         server_address,
                                         RequestHandlerClass,
                                         bind_and_activate)
@@ -748,7 +748,7 @@ class GameSpyNatNegUDPServer(SocketServer.UDPServer):
         )
         self.server_manager.connect()
 
-        self.write_queue = Queue.Queue()
+        self.write_queue = queue.Queue()
         threading.Thread(target=self.write_queue_worker).start()
 
     def write_queue_send(self, data, address, socket):

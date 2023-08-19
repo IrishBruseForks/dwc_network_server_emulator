@@ -300,15 +300,15 @@ class Gamestats(LineReceiver):
             current_data = current_data['data'].lstrip('\\').split('\\')
             new_data = data.lstrip('\\').split('\\')
 
-            current_data = dict(zip(current_data[0::2],
-                                    current_data[1::2]))
-            new_data = dict(zip(new_data[0::2], new_data[1::2]))
-            for k in new_data.keys():
+            current_data = dict(list(zip(current_data[0::2],
+                                    current_data[1::2])))
+            new_data = dict(list(zip(new_data[0::2], new_data[1::2])))
+            for k in list(new_data.keys()):
                 current_data[k] = new_data[k]
 
             # TODO: use str.join()
             data = "\\"
-            for k in current_data.keys():
+            for k in list(current_data.keys()):
                 data += k + "\\" + current_data[k] + "\\"
             data = data.rstrip("\\")  # Don't put trailing \ into db
 

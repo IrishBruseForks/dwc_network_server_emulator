@@ -75,7 +75,7 @@ def create_gamespy_message_from_dict(messages):
     l = [("__cmd__", cmd), ("__cmd_val__", cmd_val)]
     l.extend([
         (key, value)
-        for key, value in messages.items()
+        for key, value in list(messages.items())
         if key not in (cmd, "__cmd__", "__cmd_val__")
     ])
 

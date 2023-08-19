@@ -79,7 +79,7 @@ def rc4_encrypt(_key, _data):
         return
 
     # Key-scheduling algorithm
-    S = range(0x100)
+    S = list(range(0x100))
 
     j = 0
     for i in range(0x100):
