@@ -182,8 +182,8 @@ def get_local_addr(data, idx):
 def get_string(data, idx):
     """Get string from bytes."""
     data = data[idx:]
-    end = data.index('\x00')
-    return str(''.join(data[:end]))
+    end = data.index(0)
+    return bytes(data[:end]).decode("ascii")
 
 
 def get_bytes_from_num(num, fmt, bigEndian=False):
@@ -346,7 +346,7 @@ def qs_to_dict(s: bytes):
             # least let it be decoded.
             # For the most part it's not important since it's mostly
             # used for the devname/ingamesn fields.
-            url = urllib.parse.unquote(v[0].encode("ascii")).replace("*", "=").replace("?", "/").replace(">", "+").replace("-", "/")
+            url = urllib.parse.unquote(v[0]).replace("*", "=").replace("?", "/").replace(">", "+").replace("-", "/")
             ret[k] = base64.b64decode(url)
         except TypeError:
             """

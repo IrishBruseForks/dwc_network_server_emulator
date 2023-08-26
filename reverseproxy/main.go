@@ -10,8 +10,10 @@ import (
 )
 
 var (
-	nasServerProxy     = proxy.NewReverseProxy("127.0.0.1:9000")
-	storageServerProxy = proxy.NewReverseProxy("127.0.0.1:8000")
+	nasServerPort      = 9000
+	storageServerPort  = 8000
+	nasServerProxy     = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", "127.0.0.1", nasServerPort))
+	storageServerProxy = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", "127.0.0.1", storageServerPort))
 )
 
 // ProxyHandler ... fasthttp.RequestHandler func
@@ -21,17 +23,25 @@ func ProxyHandler(ctx *fasthttp.RequestCtx) {
 
 	host := string(uri.Host())
 
-	fmt.Println("host", host)
+	success := true
+	port := 0
 
 	switch host {
 	case "naswii.nintendowifi.net":
 		nasServerProxy.ServeHTTP(ctx)
+		port = nasServerPort
 
 	case "mariokartwii.sake.gs.nintendowifi.net":
 		storageServerProxy.ServeHTTP(ctx)
+		port = storageServerPort
 
 	default:
 		fmt.Println("UNHANDELD host=", host)
+		success = false
+	}
+
+	if success {
+		fmt.Println("Forwarding", host, " -> ", ctx.RemoteIP().String()+":"+fmt.Sprintf("%d", port))
 	}
 }
 

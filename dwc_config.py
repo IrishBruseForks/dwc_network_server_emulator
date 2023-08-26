@@ -64,10 +64,10 @@ def get_logger(section, filename='altwfc.cfg'):
     config = ConfigParser.RawConfigParser(allow_no_value=True)
     config.read(get_config_filename(filename))
 
-    LoggerName = config.get(section, 'LoggerName'),
-    LoggerFilename = config.get(section, 'LoggerFilename'),
-    LoggerLevel = config.getint(section, 'LoggerLevel'),
-    LoggerOutputConsole = config.getboolean(section, 'LoggerOutputConsole'),
+    LoggerName = config.get(section, 'LoggerName')
+    LoggerFilename = config.get(section, 'LoggerFilename')
+    LoggerLevel = config.getint(section, 'LoggerLevel')
+    LoggerOutputConsole = config.getboolean(section, 'LoggerOutputConsole')
     LoggerOutputFile = config.getboolean(section, 'LoggerOutputFile')
     return utils.create_logger(LoggerName, LoggerFilename, LoggerLevel, LoggerOutputConsole, LoggerOutputFile)
 

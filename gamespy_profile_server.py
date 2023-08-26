@@ -227,7 +227,7 @@ class PlayerSession(LineReceiver):
                  ' pre-authentication.'),
                 ('id', data_parsed['id']),
             ])
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
             return
 
         if 'sdkrevision' in data_parsed:
@@ -388,7 +388,7 @@ class PlayerSession(LineReceiver):
         msg = gs_query.create_gamespy_message(msg_d)
 
         self.log(logging.DEBUG, "SENDING: %s", msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_updatepro(self, data_parsed):
         """Wii example:

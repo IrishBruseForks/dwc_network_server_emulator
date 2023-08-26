@@ -72,7 +72,7 @@ class StatsPage(resource.Resource):
         self.stats = stats
 
     def render_GET(self, request):
-        if "/".join(request.postpath) == "json":
+        if request.path == b"/json":
             raw = True
             force_update = True
         else:
@@ -101,7 +101,7 @@ class StatsPage(resource.Resource):
                 output += "".join(self.row % (game, len(server_list[game])) for game in server_list if server_list[game])
             output += self.footer % (self.stats.get_last_update_time())
 
-        return output
+        return output.encode("ascii")
 
 
 class InternalStatsServer(object):
@@ -116,12 +116,11 @@ class InternalStatsServer(object):
         self.next_update = 0
         self.server_list = None
         # The number of seconds to wait before updating the server list
-        self.seconds_per_update = 60
+        self.seconds_per_update = 12
 
     def start(self):
         manager_address = dwc_config.get_ip_port('GameSpyManager')
-        manager_password = ""
-        self.server_manager = GameSpyServerDatabase(address=manager_address, authkey=manager_password)
+        self.server_manager = GameSpyServerDatabase(address=manager_address)
         self.server_manager.connect()
 
         site = server.Site(StatsPage(self))
@@ -134,12 +133,10 @@ class InternalStatsServer(object):
             pass
 
     def get_server_list(self, force_update=False):
-        if force_update or self.next_update == 0 or \
-           self.next_update - time.time() <= 0:
+        if force_update or self.next_update == 0 or self.next_update - time.time() <= 0:
             self.last_update = time.time()
             self.next_update = time.time() + self.seconds_per_update
-            self.server_list = self.server_manager.get_server_list() \
-                                                  ._getvalue()
+            self.server_list = self.server_manager.get_server_list()._getvalue()
 
             logger.log(logging.DEBUG, "%s", self.server_list)
 

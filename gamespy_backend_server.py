@@ -50,6 +50,7 @@ Basic idea:
 import logging
 import time
 import ast
+from typing import Callable
 
 from multiprocessing.managers import BaseManager
 from multiprocessing import freeze_support
@@ -69,6 +70,7 @@ class TokenType:
 
 
 class GameSpyServerDatabase(BaseManager):
+    find_servers: Callable[[str, str, str, int], list]
     pass
 
 
@@ -90,11 +92,10 @@ class GameSpyBackendServer(object):
 
     def start(self):
         address = dwc_config.get_ip_port('GameSpyManager')
-        password = ""
 
         logger.log(logging.INFO, "Started server on %s:%d...", address[0], address[1])
 
-        manager = GameSpyServerDatabase(address=address, authkey=password)
+        manager = GameSpyServerDatabase(address=address)
         server = manager.get_server()
         server.serve_forever()
 
@@ -157,8 +158,7 @@ class GameSpyBackendServer(object):
                     # >= or <=
                     i += 1
 
-            elif i + 1 < len(filters) and filters[i] == "!" and \
-                    filters[i + 1] == "=":
+            elif i + 1 < len(filters) and filters[i] == "!" and filters[i + 1] == "=":
                 i += 2
                 token_type = TokenType.TOKEN
 
@@ -185,8 +185,7 @@ class GameSpyBackendServer(object):
                 if i < len(filters) and filters[i] == "\"":
                     i += 1  # Skip quotation mark
 
-            elif i + 1 < len(filters) and filters[i] == '-' and \
-                    filters[i + 1].isdigit():
+            elif i + 1 < len(filters) and filters[i] == '-' and filters[i + 1].isdigit():
                 # Negative number
                 token_type = TokenType.NUMBER
                 i += 1
@@ -200,14 +199,11 @@ class GameSpyBackendServer(object):
                 elif filters[i].isalpha():
                     token_type = TokenType.FIELD
 
-                while i < len(filters) and (filters[i].isalnum() or
-                                            filters[i] in special_chars) and \
-                        filters[i] not in "!=>< ":
+                while i < len(filters) and (filters[i].isalnum() or filters[i] in special_chars) and filters[i] not in "!=>< ":
                     i += 1
 
         token = filters[start:i]
-        if token_type == TokenType.FIELD and \
-           (token.lower() == "and" or token.lower() == "or"):
+        if token_type == TokenType.FIELD and (token.lower() == "and" or token.lower() == "or"):
             token = token.lower()
 
         return token, i, token_type
@@ -240,20 +236,21 @@ class GameSpyBackendServer(object):
         return output, variables
 
     def validate_ast(self, node, num_literal_only, is_sql=False):
-        # This function tries to verify that the expression is a valid
-        # expression before it gets evaluated.
-        # Anything besides the whitelisted things below are strictly
-        # forbidden:
-        # - String literals
-        # - Number literals
-        # - Binary operators (CAN ONLY BE PERFORMED ON TWO NUMBER LITERALS)
-        # - Comparisons (cannot use 'in', 'not in', 'is', 'is not' operators)
-        #
-        # Anything such as variables or arrays or function calls are NOT
-        # VALID.
-        # Never run the expression received from the client before running
-        # this function on the expression first.
-        # print type(node)
+        """
+        This function tries to verify that the expression is a valid
+        expression before it gets evaluated.
+        Anything besides the whitelisted things below are strictly
+        forbidden:
+        - String literals
+        - Number literals
+        - Binary operators (CAN ONLY BE PERFORMED ON TWO NUMBER LITERALS)
+        - Comparisons (cannot use 'in', 'not in', 'is', 'is not' operators)
+
+        Anything such as variables or arrays or function calls are NOT
+        VALID.
+        Never run the expression received from the client before running
+        this function on the expression first.
+        """
 
         # Only allow literals, comparisons, and math operations
         valid_node = False
@@ -273,11 +270,7 @@ class GameSpyBackendServer(object):
 
         elif isinstance(node, ast.BinOp):
             # Allow SQL_COMMAND infix operator with more types
-            is_sql |= \
-                hasattr(node, "left") and \
-                hasattr(node.left, "right") and \
-                isinstance(node.left.right, ast.Name) and \
-                node.left.right.id in sql_commands
+            is_sql |= hasattr(node, "left") and hasattr(node.left, "right") and isinstance(node.left.right, ast.Name) and node.left.right.id in sql_commands  # type: ignore
             valid_node = self.validate_ast(node.left, True, is_sql)
 
             if valid_node:
@@ -299,8 +292,7 @@ class GameSpyBackendServer(object):
                 # comparison operators. These are python-specific and the
                 # games have no way of knowing what they are, so there's no
                 # reason to keep them around.
-                if isinstance(op, ast.Is) or isinstance(op, ast.IsNot) or \
-                   isinstance(op, ast.In) or isinstance(op, ast.NotIn):
+                if isinstance(op, ast.Is) or isinstance(op, ast.IsNot) or isinstance(op, ast.In) or isinstance(op, ast.NotIn):
                     valid_node = False
                     break
 
@@ -346,11 +338,9 @@ class GameSpyBackendServer(object):
 
                         elif token_type == TokenType.NUMBER:
                             for idx2 in range(idx + 1, len(translated)):
-                                _, _, token_type = \
-                                    self.get_token(translated[idx2])
+                                _, _, token_type = self.get_token(translated[idx2])
 
-                                if token_type == TokenType.TOKEN and \
-                                   translated[idx2] not in ('(', ')'):
+                                if token_type == TokenType.TOKEN and translated[idx2] not in ('(', ')'):
                                     if idx2 == idx + 1:
                                         # Skip boolean operator if it's the
                                         # first token on the right
@@ -360,8 +350,7 @@ class GameSpyBackendServer(object):
                                     token = str(int(token))
                                     break
 
-                                elif token_type == TokenType.STRING or \
-                                        token_type == TokenType.NUMBER:
+                                elif token_type == TokenType.STRING or token_type == TokenType.NUMBER:
                                     if token_type == TokenType.STRING:
                                         # Found string on far right, turn left
                                         # into string as well
@@ -386,7 +375,7 @@ class GameSpyBackendServer(object):
 
                 if not valid_filter:
                     # Return only anything matched up until this point.
-                    logger.log(logging.WARNING, "Invalid filter(s): %s", filters)
+                    logger.log(logging.WARNING, "Invalid filter(s): %s", q)
                     # stop_search = True
                     continue
                 else:
@@ -429,8 +418,7 @@ class GameSpyBackendServer(object):
                 i += 1
 
             attrs = ["localport", "natneg", "publicip", "publicport", "__session__", "__console__"]
-            result.update({name: server[name]
-                           for name in attrs if name in server})
+            result.update({name: server[name] for name in attrs if name in server})
 
             requested = {}
             for field in fields:
@@ -445,7 +433,7 @@ class GameSpyBackendServer(object):
             result['requested'] = requested
             servers.append(result)
 
-        logger.log(logging.DEBUG, "Matched %d servers in %s seconds", len(servers), (time.time() - start))
+        logger.log(logging.DEBUG, "Matched servers found: %s", matched_servers)
 
         return servers
 
@@ -485,13 +473,11 @@ class GameSpyBackendServer(object):
             # Search all servers
             for gameid in self.server_list:
                 for server in self.server_list[gameid]:
-                    if server['publicip'] == ip and \
-                       (not port or server['publicport'] == str(port)):
+                    if server['publicip'] == ip and (not port or server['publicport'] == str(port)):
                         return server
         else:
             for server in self.server_list[gameid]:
-                if server['publicip'] == ip and \
-                   (not port or server['publicport'] == str(port)):
+                if server['publicip'] == ip and (not port or server['publicport'] == str(port)):
                     return server
 
         return None

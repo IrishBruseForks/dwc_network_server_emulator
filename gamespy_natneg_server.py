@@ -708,6 +708,7 @@ class GameSpyNatNegUDPServerHandler(socketserver.BaseRequestHandler):
 
 class GameSpyNatNegUDPServer(socketserver.UDPServer):
     """GameSpy NAT Negotiation server."""
+    server_manager: GameSpyServerDatabase
 
     def __init__(self, server_address=dwc_config.get_ip_port('GameSpyNatNegServer'), RequestHandlerClass=GameSpyNatNegUDPServerHandler, bind_and_activate=True):
         socketserver.UDPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
@@ -715,7 +716,7 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
         self.natneg_preinit_session = {}
         self.secret_key_list = gs_utils.generate_secret_keys("gslist.cfg")
 
-        self.server_manager = GameSpyServerDatabase(address=dwc_config.get_ip_port('GameSpyManager'), authkey="")
+        self.server_manager = GameSpyServerDatabase(address=dwc_config.get_ip_port('GameSpyManager'))
         self.server_manager.connect()
 
         self.write_queue = queue.Queue()
@@ -735,8 +736,7 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
         """Get server by public IP."""
         server = None
         ip_str = self.session_list[session_id][client_id]['addr'][0]
-        servers = self.server_manager.get_natneg_server(session_id) \
-                                     ._getvalue()
+        servers = self.server_manager.get_natneg_server(session_id)._getvalue()
 
         if servers is None:
             return None

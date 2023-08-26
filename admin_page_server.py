@@ -50,7 +50,8 @@ admin_password = None
 
 if os.path.exists('adminpageconf.json'):
     try:
-        adminpageconf = json.loads(file('adminpageconf.json').read().strip())
+        with open('adminpageconf.json', mode='r') as file:
+            adminpageconf = json.loads(file.read().strip())
         admin_username = str(adminpageconf['username'])
         admin_password = str(adminpageconf['password'])
     except Exception as e:
@@ -99,7 +100,7 @@ class AdminPage(resource.Resource):
         error_message = "Authorization required!"
         address = request.getClientIP()
         try:
-            expected_auth = base64.encodestring(admin_username + ":" + admin_password).strip()
+            expected_auth = base64.encodebytes(admin_username + ":" + admin_password).strip()
             actual_auth = request.getAllHeaders()['authorization'] \
                 .replace("Basic ", "") \
                 .strip()

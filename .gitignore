@@ -4,3 +4,4 @@ logs/
 *.pyc
 adminpageconf.json
 Remote.log
+RunMeAsAdmin.bat

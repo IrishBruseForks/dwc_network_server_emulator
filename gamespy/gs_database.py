@@ -40,8 +40,9 @@ logger = utils.create_logger(logger_name, logger_filename, -1, logger_output_to_
 
 class Transaction(object):
 
-    def __init__(self, connection):
-        self.conn = connection
+    def __init__(self, connection: sqlite3.Connection | None):
+        if connection is not None:
+            self.conn = connection
         self.databaseAltered = False
 
     def __enter__(self):
@@ -128,7 +129,7 @@ class GamespyDatabase(object):
             """)
 
             tx.nonquery("""
-            CREATE TABLE IF NOT EXISTS buddies"
+            CREATE TABLE IF NOT EXISTS buddies
             (
                 userProfileId INT, buddyProfileId INT,
                 time INT,status INT, notified INT,
@@ -474,14 +475,14 @@ class GamespyDatabase(object):
         if "ingamesn" in data:
             data["ingamesn"] = gs_utils.base64_encode(data["ingamesn"].encode("ascii"))
 
-        data = json.dumps(data)
+        data_dump = json.dumps(data)
 
         with Transaction(self.conn) as tx:
             if r is None:  # no row, add it
-                tx.nonquery("INSERT INTO nas_logins VALUES (?, ?, ?)", (userid, authtoken, data))
+                tx.nonquery("INSERT INTO nas_logins VALUES (?, ?, ?)", (userid, authtoken, data_dump))
             else:
                 tx.nonquery("UPDATE nas_logins SET authtoken = ?, data = ?"
-                            " WHERE userid = ?", (authtoken, data, userid))
+                            " WHERE userid = ?", (authtoken, data_dump, userid))
 
         return authtoken
 

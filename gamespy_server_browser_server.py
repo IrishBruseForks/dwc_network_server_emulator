@@ -112,8 +112,7 @@ class Session(LineReceiver):
         self.buffer = []
 
         manager_address = dwc_config.get_ip_port('GameSpyManager')
-        manager_password = ""
-        self.server_manager = GameSpyServerDatabase(address=manager_address, authkey=manager_password)
+        self.server_manager = GameSpyServerDatabase(address=manager_address)
         self.server_manager.connect()
 
     def log(self, level, msg, *args, **kwargs):
@@ -140,7 +139,7 @@ class Session(LineReceiver):
 
             while len(self.buffer) > 0:
                 packet_len = utils.get_short(self.buffer, 0, True)
-                packet = None
+                packet: bytes = None
 
                 if len(self.buffer) >= packet_len:
                     packet = self.buffer[:packet_len]
@@ -157,9 +156,9 @@ class Session(LineReceiver):
                     # coming out strong.
                     # TODO: Rewrite this section later?
                     idx = 3
-                    list_version = ord(packet[idx])
+                    list_version = packet[idx]
                     idx += 1
-                    encoding_version = ord(packet[idx])
+                    encoding_version = packet[idx]
                     idx += 1
                     game_version = utils.get_int(packet, idx)
                     idx += 4
@@ -169,7 +168,7 @@ class Session(LineReceiver):
                     game_name = utils.get_string(packet, idx)
                     idx += len(game_name) + 1
 
-                    challenge = ''.join(packet[idx:idx + 8])
+                    challenge = bytes(packet[idx:idx + 8]).decode('ascii')
                     idx += 8
 
                     filter = utils.get_string(packet, idx)
@@ -233,7 +232,7 @@ class Session(LineReceiver):
 
                 elif packet[2] == 0x2:  # Send message request
                     packet_len = utils.get_short(packet, 0, True)
-                    dest_addr = '.'.join(["%d" % ord(x) for x in packet[3:7]])
+                    dest_addr = '.'.join([str(x) for x in packet[3:7]])
                     # What's the pythonic way to do this? unpack?
                     dest_port = utils.get_short(packet, 7, True)
                     dest = (dest_addr, dest_port)
@@ -265,7 +264,7 @@ class Session(LineReceiver):
         results = self.server_manager.find_servers(game, filter, fields, max_count)
         return results
 
-    def generate_server_list_header_data(self, address, fields):
+    def generate_server_list_header_data(self, address, fields: list[str]):
         output = bytearray()
 
         # Write the address
@@ -285,7 +284,7 @@ class Session(LineReceiver):
 
         # Write the fields
         for field in fields:
-            output += bytearray(field) + '\0\0'
+            output += field.encode("ascii") + b'\0\0'
 
         return output
 
@@ -327,16 +326,15 @@ class Session(LineReceiver):
                 flags_buffer += bytearray([int(x) for x in "0.0.0.0".split('.')])
 
                 output += bytearray([flags & 0xff])
-                output += flags_buffer
+                output.extend(flags_buffer)
 
                 if (flags & ServerListFlags.HAS_KEYS_FLAG):
                     # Write data for associated fields
                     if 'requested' in server_info:
                         for field in fields:
-                            output += '\xff' + \
-                                      bytearray(
-                                          server_info['requested'][field]
-                                      ) + '\0'
+                            output.extend([0xff])
+                            output.extend(server_info['requested'][field].encode("ascii"))
+                            output.extend([0x0])
 
         return output
 
@@ -359,7 +357,8 @@ class Session(LineReceiver):
         # Get dictionary from master server list server.
         self.log(logging.DEBUG, "Searching for server matching '%s' with the fields '%s'", filter, fields)
 
-        self.server_list = self.server_manager.find_servers(query_game, filter, fields, max_servers)._getvalue()
+        if hasattr(self.server_manager, "find_servers"):
+            self.server_list = self.server_manager.find_servers(query_game, filter, fields, max_servers)._getvalue()
 
         self.log(logging.DEBUG, "%s", "Found server(s):")
         self.log(logging.DEBUG, "%s", self.server_list)
@@ -371,15 +370,14 @@ class Session(LineReceiver):
         for i in range(0, len(self.server_list)):
             server = self.server_list[i]
 
-            if server and fields and 'requested' in server and \
-               not server['requested']:
+            if server and fields and 'requested' in server and not server['requested']:
                 # If the requested fields weren't found then don't return
                 # a server. This fixes a bug with Mario Kart DS.
                 # print "Requested was empty"
                 server = {}
 
             if "__console__" in server:
-                self.console = int(server['__console__'])
+                self.console = server['__console__']
 
             # Generate binary server list data
             data += self.generate_server_list_data(self.address, fields, server, i >= len(self.server_list))
@@ -392,12 +390,14 @@ class Session(LineReceiver):
             #     self.server_cache[str(server['publicip']) + \
             #                       str(server['publicport'])] = server
 
-        data += '\0'
+        data += b'\0'
         data += utils.get_bytes_from_int(0xffffffff)
-        send_encrypted_data(self, challenge, data)
+        send_encrypted_data(self, challenge, bytes(data))
 
     def find_server_in_cache(self, addr, port, console):
-        ip = str(utils.get_ip(bytearray([int(x) for x in addr.split('.')]), 0, console))
+        data = bytearray([int(x, 0) for x in addr.split('.')])
+        ipaddress = utils.get_ip(data, 0, console)
+        ip = str(ipaddress)
         server = self.server_manager.find_server_by_address(ip, port)._getvalue()
         self.log(logging.DEBUG, "find_server_in_cache is returning: %s %s", server, ip)
 
@@ -426,8 +426,7 @@ class Session(LineReceiver):
             return
 
         self.log(logging.DEBUG, "%s %s", ip, server['publicip'])
-        if server['publicip'] == ip and \
-           server['publicport'] == str(forward_client[1]):
+        if server['publicip'] == ip and server['publicport'] == str(forward_client[1]):
             if forward_client[1] == 0 and 'localport' in server:
                 # No public port returned from client, try contacting on
                 # the local port.
@@ -469,9 +468,7 @@ class Session(LineReceiver):
                 else:
                     self.log(logging.DEBUG, "Found own server: %s", self.own_server)
 
-            elif len(data) == 10 and \
-                    bytearray(data)[0:6] == \
-                    bytearray([0xfd, 0xfc, 0x1e, 0x66, 0x6a, 0xb2]):
+            elif len(data) == 10 and bytearray(data)[0:6] == bytearray([0xfd, 0xfc, 0x1e, 0x66, 0x6a, 0xb2]):
                 natneg_session = utils.get_int_signed(data, 6)
                 self.log(logging.DEBUG, "Adding %d to natneg server list: %s", natneg_session, server)
                 # Store info in backend so we can get it later in natneg

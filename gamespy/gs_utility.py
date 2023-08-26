@@ -248,24 +248,14 @@ class EncTypeX:
     def __init__(self):
         return
 
-    def decrypt(self, key, validate, data):
-        if not key or not validate or not data:
-            return None
-
-        encxkey = bytearray([0] * 261)
-        data = self.init(encxkey, key, validate, data)
-        self.func6(encxkey, data, len(data))
-
-        return data
-
-    def encrypt(self, key, validate, data):
+    def encrypt(self, key, validate, data: bytes):
         if not key or not validate or not data:
             return None
 
         # Convert data from strings to byte arrays before use or else
         # it'll raise an error
-        key = bytearray(key)
-        validate = bytearray(validate)
+        key = key.encode("ascii")
+        validate = validate.encode("ascii")
 
         # Add room for the header
         tmp_len = 20
@@ -288,14 +278,20 @@ class EncTypeX:
         # The header of the data gets chopped off in init(), so save it
         header = data[:tmp_len]
         encxkey = bytearray([0] * 261)
-        data = self.init(encxkey, key, validate, data)
+
+        initData = self.init(encxkey, key, validate, data)
+
+        if initData is None:
+            return header
+
+        data = initData
         self.func6e(encxkey, data, len(data))
 
         # Reappend header that we saved earlier before returning to make
         # the complete buffer
         return header + data
 
-    def init(self, encxkey, key, validate, data):
+    def init(self, encxkey, key, validate, data: bytes) -> bytes | None:
         data_len = len(data)
 
         if data_len < 1:

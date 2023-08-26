@@ -117,7 +117,8 @@ class Gamestats(LineReceiver):
             self.log(logging.DEBUG, "SENDING: '%s'...", msg)
 
             msg = self.crypt(msg)
-            self.transport.write(bytes(msg))
+            if self.transport is not None:
+                self.transport.write(msg)
         except:
             self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
@@ -180,7 +181,8 @@ class Gamestats(LineReceiver):
         self.log(logging.DEBUG, "SENDING: '%s'...", msg)
 
         msg = self.crypt(msg)
-        self.transport.write(bytes(msg))
+        if self.transport is not None:
+            self.transport.write(msg)
 
     def perform_authp(self, data_parsed):
         authtoken_parsed = gs_utils.parse_authtoken(data_parsed['authtoken'], self.db)
@@ -353,10 +355,10 @@ class Gamestats(LineReceiver):
         # No op
         return
 
-    def crypt(self, data):
+    def crypt(self, data: str):
         key = bytearray(b"GameSpy3D")
         key_len = len(key)
-        output = bytearray(data.encode("ascii"))
+        output = data.encode("ascii")
 
         if "\\final\\" in output:
             end = output.index("\\final\\")

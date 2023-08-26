@@ -95,9 +95,8 @@ class GameSpyQRServer(object):
     def start(self):
         try:
             manager_address = dwc_config.get_ip_port('GameSpyManager')
-            manager_password = ""
 
-            self.server_manager = GameSpyServerDatabase(address=manager_address, authkey=manager_password)
+            self.server_manager = GameSpyServerDatabase(address=manager_address)
             self.server_manager.connect()
 
             # Start QR server
@@ -107,7 +106,7 @@ class GameSpyQRServer(object):
 
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind(address)
-            self.socket.setblocking(0)
+            self.socket.setblocking(False)
 
             logger.log(logging.INFO, "Server is now listening on %s:%s...", address[0], address[1])
 
@@ -127,7 +126,7 @@ class GameSpyQRServer(object):
                 if ready[0]:
                     try:
                         recv_data, address = self.socket.recvfrom(2048)
-                        self.handle_packet(self.socket, recv_data, address)
+                        self.handle_packet(recv_data, address)
                     except:
                         logger.log(logging.ERROR, "Failed to handle client: %s", traceback.format_exc())
 
@@ -168,7 +167,7 @@ class GameSpyQRServer(object):
             if session_id in self.sessions:
                 self.sessions[session_id].gamename = k['gamename']
 
-    def handle_packet(self, socket, recv_data: bytes, address):
+    def handle_packet(self, recv_data: bytes, address):
         """Tetris DS overlay 10 @ 02144184 - Handle responses back to server.
 
         After some more packet inspection, it seems the format goes something
@@ -271,7 +270,8 @@ class GameSpyQRServer(object):
         Use as reference.
         """
         session_id = None
-        if recv_data[0] != 0x09:
+        session_id_raw = b""
+        if recv_data[0] != 0x09:  # availability check
             # Don't add a session if the client is trying to check if the game
             # is available or not
             session_id = struct.unpack("<I", recv_data[1:5])[0]
@@ -296,7 +296,8 @@ class GameSpyQRServer(object):
             self.log(logging.DEBUG, address, session_id, "NOT IMPLEMENTED! Received query from %s:%s... %s", address[0], address[1], recv_data[5:])
 
         elif recv_data[0] == 0x01:  # Challenge
-            self.log(logging.DEBUG, address, session_id, "Received challenge from %s:%s... %s", address[0], address[1], recv_data[5:])
+            challengeBytes = recv_data[5:].decode("ascii")
+            self.log(logging.DEBUG, address, session_id, "Received challenge from %s:%s...\n%s", address[0], address[1], challengeBytes)
 
             # Prepare the challenge sent from the server to be compared
             challenge = gs_utils.prepare_rc4_base64(self.sessions[session_id].secretkey, self.sessions[session_id].challenge)
@@ -326,10 +327,13 @@ class GameSpyQRServer(object):
 
         elif recv_data[0] == 0x03:  # Heartbeat
             data = recv_data[5:]
-            self.log(logging.DEBUG, address, session_id, "Received heartbeat from %s:%s...\n%s", address[0], address[1], data)
 
             # Parse information from heartbeat here
-            d = data.rstrip(b'\0').split(b'\0')
+            b = data.rstrip(b"\0").split(b"\0")
+
+            d = [item.decode("ascii") for item in b]
+
+            self.log(logging.DEBUG, address, session_id, "Received heartbeat from \n%s", d)
 
             # It may be safe to ignore "unknown" keys because the proper key
             # names get filled in later...
@@ -432,7 +436,7 @@ class GameSpyQRServer(object):
                 # Get the session ID
                 packet.extend(session_id_raw)
                 packet.extend(server_challenge.encode("ascii"))
-                packet.extend(b'0x00')
+                packet.extend([0])
 
                 self.write_queue.put((packet, address))
                 self.log(logging.DEBUG, address, session_id, "Sent challenge to %s:%s...", address[0], address[1])
