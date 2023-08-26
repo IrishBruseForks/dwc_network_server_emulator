@@ -100,16 +100,13 @@ def handle_natneg_init(nn, recv_data, addr, socket):
     client_id = "%02x" % ord(recv_data[13])
     localaddr = utils.get_local_addr(recv_data, 15)
 
-    nn.session_list \
-        .setdefault(session_id, {}) \
-        .setdefault(client_id,
-                    {
-                        'connected': False,
-                        'addr': '',
-                        'localaddr': None,
-                        'serveraddr': None,
-                        'gameid': None
-                    })
+    nn.session_list.setdefault(session_id, {}).setdefault(client_id, {
+        'connected': False,
+        'addr': '',
+        'localaddr': None,
+        'serveraddr': None,
+        'gameid': None
+    })
 
     # In fact, it's a pointer
     client_id_session = nn.session_list[session_id][client_id]
@@ -133,9 +130,7 @@ def handle_natneg_init(nn, recv_data, addr, socket):
         if client_session['serveraddr'] is not None:
             publicport = int(client_session['serveraddr']['publicport'])
         else:
-            publicport = \
-                client_session['localaddr'][1] or \
-                client_session['addr'][1]
+            publicport = client_session['localaddr'][1] or client_session['addr'][1]
 
         output = bytearray(recv_data[0:12])
         output += utils.get_bytes_from_ip_str(client_session['addr'][0])
@@ -159,9 +154,7 @@ def handle_natneg_init(nn, recv_data, addr, socket):
         if client_id_session['serveraddr'] is not None:
             publicport = int(client_id_session['serveraddr']['publicport'])
         else:
-            publicport = \
-                client_id_session['localaddr'][1] or \
-                client_id_session['addr'][1]
+            publicport = client_id_session['localaddr'][1] or client_id_session['addr'][1]
 
         output = bytearray(recv_data[0:12])
         output += utils.get_bytes_from_ip_str(client_id_session['addr'][0])
@@ -328,8 +321,7 @@ def handle_natneg_connect_ack(nn, recv_data, addr, socket):
     session_id = utils.get_int(recv_data, 8)
     logger.log(logging.DEBUG, "Received connected command from %s:%d...", *addr)
 
-    if session_id in nn.session_list and \
-       client_id in nn.session_list[session_id]:
+    if session_id in nn.session_list and client_id in nn.session_list[session_id]:
         nn.session_list[session_id][client_id]['connected'] = True
 
 
@@ -764,9 +756,7 @@ class GameSpyNatNegUDPServer(socketserver.UDPServer):
 
     def get_server_addr(self, gameid, session_id, client_id):
         """Get server address."""
-        return \
-            self.get_server_info(gameid, session_id, client_id) or \
-            self.get_server_info_alt(gameid, session_id, client_id)
+        return self.get_server_info(gameid, session_id, client_id) or self.get_server_info_alt(gameid, session_id, client_id)
 
 
 class GameSpyNatNegServer(object):

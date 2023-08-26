@@ -338,7 +338,7 @@ def pretty_print_hex(orig_data, cols=16, sep=' '):
 def qs_to_dict(s: bytes):
     """Convert query string to dict."""
     parse = urllib.parse.parse_qs(s, True)
-    ret = {}
+    ret: dict[str, bytes] = {}
 
     for k, v in parse.items():
         try:

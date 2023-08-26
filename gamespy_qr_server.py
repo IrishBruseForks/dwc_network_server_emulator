@@ -33,6 +33,7 @@ import socket
 import struct
 import threading
 import time
+from typing import Callable
 import queue
 import traceback
 
@@ -48,10 +49,13 @@ logger = dwc_config.get_logger('GameSpyQRServer')
 
 
 class GameSpyServerDatabase(BaseManager):
+    delete_server: Callable
+    update_server_list: Callable
     pass
 
 
 class GameSpyQRServer(object):
+    write_queue: queue.Queue
 
     class Session(object):
 
@@ -269,6 +273,7 @@ class GameSpyQRServer(object):
         https://github.com/sfcspanky/Openspy-Core/tree/master/qr
         Use as reference.
         """
+
         session_id = None
         session_id_raw = b""
         if recv_data[0] != 0x09:  # availability check
@@ -283,8 +288,7 @@ class GameSpyQRServer(object):
                 self.sessions[session_id].keepalive = int(time.time())
                 self.sessions[session_id].disconnected = False
 
-            if session_id in self.sessions and \
-               self.sessions[session_id].disconnected:
+            if session_id in self.sessions and self.sessions[session_id].disconnected:
                 return
 
             if session_id in self.sessions:
@@ -351,20 +355,17 @@ class GameSpyQRServer(object):
                         naslogin = self.db.get_nas_login_from_userid(profile['userid'])
                         # Convert to string from unicode (which is just a
                         # base64 string anyway)
-                        self.sessions[session_id].ingamesn = \
-                            str(naslogin['ingamesn'])
+                        self.sessions[session_id].ingamesn = str(naslogin['ingamesn'])
                     except Exception as e:
                         # If the game doesn't have, don't worry about it.
                         pass
 
-                if self.sessions[session_id].ingamesn is not None and \
-                   "ingamesn" not in k:
+                if self.sessions[session_id].ingamesn is not None and "ingamesn" not in k:
                     k['ingamesn'] = self.sessions[session_id].ingamesn
 
             if "gamename" in k:
                 if k['gamename'] in self.secret_key_list:
-                    self.sessions[session_id].secretkey = \
-                        self.secret_key_list[k['gamename']]
+                    self.sessions[session_id].secretkey = self.secret_key_list[k['gamename']]
                 else:
                     self.log(logging.INFO, address, session_id, "Connection from unknown game '%s'!", k['gamename'])
 
@@ -380,16 +381,10 @@ class GameSpyQRServer(object):
                 if 'gamename' in k:
                     self.sessions[session_id].console = 0
 
-                    if k['gamename'].endswith('ds') or \
-                       k['gamename'].endswith('dsam') or \
-                       k['gamename'].endswith('dsi') or \
-                       k['gamename'].endswith('dsiam'):
+                    if k['gamename'].endswith('ds') or k['gamename'].endswith('dsam') or k['gamename'].endswith('dsi') or k['gamename'].endswith('dsiam'):
                         self.sessions[session_id].console = 0
                         found_console = True
-                    elif k['gamename'].endswith('wii') or \
-                            k['gamename'].endswith('wiiam') or \
-                            k['gamename'].endswith('wiiware') or \
-                            k['gamename'].endswith('wiiwaream'):
+                    elif k['gamename'].endswith('wii') or k['gamename'].endswith('wiiam') or k['gamename'].endswith('wiiware') or k['gamename'].endswith('wiiwaream'):
                         self.sessions[session_id].console = 1
                         found_console = True
 
@@ -401,8 +396,7 @@ class GameSpyQRServer(object):
                             profile = self.db.get_profile_from_profileid(self.sessions[session_id].playerid)
 
                             if "console" in profile:
-                                self.sessions[session_id].console = \
-                                    profile['console']
+                                self.sessions[session_id].console = profile['console']
 
                             break
                         except:
@@ -415,9 +409,7 @@ class GameSpyQRServer(object):
                 be = self.sessions[session_id].console != 0
                 k['publicip'] = str(utils.get_ip(bytearray([int(x) for x in address[0].split('.')]), 0, be))
 
-            if 'publicport' in k and \
-               'localport' in k and \
-               k['publicport'] != k['localport']:
+            if 'publicport' in k and 'localport' in k and k['publicport'] != k['localport']:
                 self.log(logging.DEBUG, address, session_id, "publicport %s doesn't match localport %s,"
                          " so changing publicport to %s...", k['publicport'], k['localport'], str(address[1]))
                 k['publicport'] = str(address[1])

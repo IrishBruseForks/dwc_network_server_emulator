@@ -29,8 +29,8 @@ from twisted.internet.endpoints import serverFromString
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 from twisted.internet.error import ReactorAlreadyRunning
+from gamespy.gs_database import GamespyDatabase
 
-import gamespy.gs_database as gs_database
 import gamespy.gs_query as gs_query
 import gamespy.gs_utility as gs_utils
 import other.utils as utils
@@ -72,11 +72,26 @@ class PlayerFactory(Factory):
 
 
 class PlayerSession(LineReceiver):
+    db: GamespyDatabase
+    sessions: str
+    address: str
+    remaining_message: str
+    remaining: str
+    profileid: str
+    gameid: str
+    buddies: str
+    blocked: str
+    status: str
+    statstring: str
+    locstring: str
+    keepalive: str
+    sesskey: str
+    sdkrevision: str
 
     def __init__(self, sessions, address):
         self.setRawMode()  # We're dealing with binary data so set to raw mode
 
-        self.db = gs_database.GamespyDatabase()
+        self.db = GamespyDatabase()
 
         self.sessions = sessions
         self.address = address
@@ -172,20 +187,18 @@ class PlayerSession(LineReceiver):
             # stored in the variable remaining_message. On the next
             # rawDataReceived command, the remaining message and the data
             # are combined to create a full command.
-            data = self.remaining_message + data.decode("ascii")
+            msg = self.remaining_message + data.decode("ascii")
 
             # Check to make sure the data buffer starts with a valid command.
-            if len(data) > 0 and data[0] != '\\':
+            if len(msg) > 0 and msg[0] != '\\':
                 # There is data in the buffer but it doesn't start with a \ so
                 # there's no chance of it being valid. Look for the first
                 # instance of \final\ and remove everything before it. If
                 # \final\ is not in the command string then ignore it.
                 final = "\\final\\"
-                data = data[data.index(final) + len(final):] \
-                    if final in data else ""
+                msg = msg[msg.index(final) + len(final):] if final in msg else ""
 
-            commands, self.remaining_message = \
-                gs_query.parse_gamespy_message(data)
+            commands, self.remaining_message = gs_query.parse_gamespy_message(msg)
 
             cmds = {
                 "login": self.perform_login,
@@ -241,9 +254,7 @@ class PlayerSession(LineReceiver):
 
         proof = gs_utils.generate_proof(self.challenge, authtoken_parsed['challenge'], data_parsed['challenge'], data_parsed['authtoken'])
 
-        userid, profileid, gsbrcd, uniquenick = \
-            gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed,
-                                                        self.db)
+        userid, profileid, gsbrcd, uniquenick = gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed, self.db)
 
         if profileid is not None:
             # Successfully logged in or created account, continue
@@ -533,8 +544,7 @@ class PlayerSession(LineReceiver):
                 target_buddy_list = self.db.get_buddy_list(newprofileid)
                 logger.log(logging.DEBUG, "%s", target_buddy_list)
                 for buddy in target_buddy_list:
-                    if buddy['buddyProfileId'] == self.profileid and \
-                       not buddy['blocked']:
+                    if buddy['buddyProfileId'] == self.profileid and not buddy['blocked']:
                         other_player_authorized = True
                         break
 
@@ -635,8 +645,7 @@ class PlayerSession(LineReceiver):
                 #          self.sessions[
                 #              buddy['buddyProfileId']
                 #          ].address.port, msg)
-                self.sessions[buddy['buddyProfileId']].transport \
-                                                      .write(bytes(msg))
+                self.sessions[buddy['buddyProfileId']].transport.write(bytes(msg))
 
     def get_status_from_friends(self, buddy_profileid=None):
         """This will be called when the player logs in.
@@ -657,8 +666,7 @@ class PlayerSession(LineReceiver):
             if buddy['status'] != 1:
                 continue
 
-            if buddy['buddyProfileId'] in self.sessions and \
-               self.sessions[buddy['buddyProfileId']].gameid == self.gameid:
+            if buddy['buddyProfileId'] in self.sessions and self.sessions[buddy['buddyProfileId']].gameid == self.gameid:
                 status_msg = "|s|%s|ss|%s|ls|%s|ip|%d|p|0|qm|0" % (self.sessions[buddy['buddyProfileId']].status, self.sessions[buddy['buddyProfileId']].statstring, self.sessions[buddy['buddyProfileId']].locstring,
                                                                    self.get_ip_as_int(self.sessions[buddy['buddyProfileId']].address.host))
             else:

@@ -418,7 +418,8 @@ class GameSpyBackendServer(object):
                 i += 1
 
             attrs = ["localport", "natneg", "publicip", "publicport", "__session__", "__console__"]
-            result.update({name: server[name] for name in attrs if name in server})
+            result.update({name: server[name]
+                           for name in attrs if name in server})
 
             requested = {}
             for field in fields:
@@ -432,8 +433,6 @@ class GameSpyBackendServer(object):
 
             result['requested'] = requested
             servers.append(result)
-
-        logger.log(logging.DEBUG, "Matched servers found: %s", matched_servers)
 
         return servers
 

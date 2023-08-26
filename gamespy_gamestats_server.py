@@ -137,8 +137,7 @@ class Gamestats(LineReceiver):
             self.data = msg
             self.remaining_message = ""
 
-            commands, self.remaining_message = \
-                gs_query.parse_gamespy_message(msg)
+            commands, self.remaining_message = gs_query.parse_gamespy_message(msg)
             logger.log(logging.DEBUG, "STATS RESPONSE: %s", msg)
 
             cmds = {
@@ -191,9 +190,7 @@ class Gamestats(LineReceiver):
         if "lid" in data_parsed:
             self.lid = data_parsed['lid']
 
-        userid, profileid, gsbrcd, uniquenick = \
-            gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed,
-                                                        self.db)
+        userid, profileid, gsbrcd, uniquenick = gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed, self.db)
 
         if profileid is not None:
             # Successfully logged in or created account, continue
@@ -307,9 +304,7 @@ class Gamestats(LineReceiver):
             profile_data = profile['data']
             if profile_data.endswith("\\"):
                 profile_data = profile_data[:-1]
-            profile_data = \
-                gs_query.parse_gamespy_message("\\prof\\" + profile_data +
-                                               "\\final\\")
+            profile_data = gs_query.parse_gamespy_message("\\prof\\" + profile_data + "\\final\\")
 
             if profile_data is not None:
                 profile_data = profile_data[0][0]
@@ -358,10 +353,10 @@ class Gamestats(LineReceiver):
     def crypt(self, data: str):
         key = bytearray(b"GameSpy3D")
         key_len = len(key)
-        output = data.encode("ascii")
+        output = bytearray(data.encode("ascii"))
 
-        if "\\final\\" in output:
-            end = output.index("\\final\\")
+        if "\\final\\" in data:
+            end = data.index("\\final\\")
         else:
             end = len(output)
 

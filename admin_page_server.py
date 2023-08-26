@@ -45,8 +45,8 @@ _, port = dwc_config.get_ip_port('AdminPage')
 # NOTE2: Do not check the .json file into public git!
 
 adminpageconf = None
-admin_username = None
-admin_password = None
+admin_username: str = ""
+admin_password: str = ""
 
 if os.path.exists('adminpageconf.json'):
     try:
@@ -59,8 +59,8 @@ if os.path.exists('adminpageconf.json'):
                    "Admin page will not be available.")
         logger.log(logging.WARNING, str(e))
         adminpageconf = None
-        admin_username = None
-        admin_password = None
+        admin_username = ""
+        admin_password = ""
 else:
     logger.log(logging.INFO, "adminpageconf.json not found. "
                "Admin page will not be available.")
@@ -101,9 +101,7 @@ class AdminPage(resource.Resource):
         address = request.getClientIP()
         try:
             expected_auth = base64.encodebytes(admin_username + ":" + admin_password).strip()
-            actual_auth = request.getAllHeaders()['authorization'] \
-                .replace("Basic ", "") \
-                .strip()
+            actual_auth = request.getAllHeaders()['authorization'].replace("Basic ", "").strip()
             if actual_auth == expected_auth:
                 logger.log(logging.INFO, "%s Auth Success", address)
                 is_auth = True
@@ -334,13 +332,11 @@ class AdminPage(resource.Resource):
         if enable:
             dbconn.cursor().execute('UPDATE users SET enabled=1 '
                                     'WHERE gameid=? AND userid=?', (gameid, userid))
-            responsedata = "Enabled %s with gameid=%s, userid=%s" % \
-                           (ingamesn, gameid, userid)
+            responsedata = "Enabled %s with gameid=%s, userid=%s" % (ingamesn, gameid, userid)
         else:
             dbconn.cursor().execute('UPDATE users SET enabled=0 '
                                     'WHERE gameid=? AND userid=?', (gameid, userid))
-            responsedata = "Disabled %s with gameid=%s, userid=%s" % \
-                           (ingamesn, gameid, userid)
+            responsedata = "Disabled %s with gameid=%s, userid=%s" % (ingamesn, gameid, userid)
         dbconn.commit()
         dbconn.close()
         logger.log(logging.INFO, "%s %s", address, responsedata)

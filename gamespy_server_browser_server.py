@@ -444,9 +444,7 @@ class Session(LineReceiver):
             #                          bytearray([0x53, 0x42, 0x43, 0x4d,
             #                                     0x0b, 0x00, 0x00, 0x00,
             #                                     0x01, 0x04])):
-            if self.own_server is None and len(data) >= 16 and \
-               bytearray(data)[0:4] in (bytearray([0xbb, 0x49, 0xcc, 0x4d]),
-                                        bytearray([0x53, 0x42, 0x43, 0x4d])):
+            if self.own_server is None and len(data) >= 16 and bytearray(data)[0:4] in (bytearray([0xbb, 0x49, 0xcc, 0x4d]), bytearray([0x53, 0x42, 0x43, 0x4d])):
                 # Is the endianness the same between the DS and Wii here?
                 # It seems so but I'm not positive.
                 # Note to self: Port is little endian here.
