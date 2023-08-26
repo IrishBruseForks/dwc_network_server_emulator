@@ -7,6 +7,30 @@
       "label": "Format",
       "type": "shell",
       "command": "yapf . --recursive -p -i"
+    },
+    {
+      "label": "Typecheck",
+      "type": "shell",
+      "command": "mypy . --config-file mypy.ini --explicit-package-bases --show-column-numbers --show-error-end --check-untyped-defs",
+      "problemMatcher": {
+        "owner": "mypy",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "(.*\\.py):(\\d+):(\\d+):(\\d+):(\\d+): (error|note|warning): (.*)  \\[(.*)\\]$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "endLine": 4,
+          "endColumn": 5,
+          "severity": 6,
+          "message": 7,
+          "code": 8
+        },
+        "applyTo": "allDocuments",
+        "background": {
+          "activeOnStart": true
+        }
+      }
     }
   ]
 }
