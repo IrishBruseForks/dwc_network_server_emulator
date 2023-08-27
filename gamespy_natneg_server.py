@@ -57,7 +57,7 @@ GameSpyServerDatabase.register("delete_natneg_server")
 
 def handle_natneg(nn, recv_data, addr, socket):
     """Command: Unknown."""
-    logger.log(logging.DEBUG, "Received unknown command %02x from %s:%d...", ord(recv_data[7]), *addr)
+    logger.log(logging.DEBUG, "Received unknown command %02x from %s:%d...", recv_data[7], *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
 
@@ -97,7 +97,7 @@ def handle_natneg_init(nn, recv_data, addr, socket):
 
     # Try to connect to the server
     gameid = utils.get_string(recv_data, 0x15)
-    client_id = "%02x" % ord(recv_data[13])
+    client_id = "%02x" % recv_data[13]
     localaddr = utils.get_local_addr(recv_data, 15)
 
     nn.session_list.setdefault(session_id, {}).setdefault(client_id, {
@@ -317,7 +317,7 @@ def handle_natneg_connect_ack(nn, recv_data, addr, socket):
     a0 80 00 00       - Local IP?
     00 90             - Local port?
     """
-    client_id = "%02x" % ord(recv_data[13])
+    client_id = "%02x" % recv_data[13]
     session_id = utils.get_int(recv_data, 8)
     logger.log(logging.DEBUG, "Received connected command from %s:%d...", *addr)
 
@@ -413,7 +413,7 @@ def handle_natneg_address_check(nn, recv_data, addr, socket):
     00 00 00 00       - NAT mapping scheme?
     00 (x50)          - Game name?
     """
-    client_id = "%02x" % ord(recv_data[13])
+    client_id = "%02x" % recv_data[13]
     logger.log(logging.DEBUG, "Received address check command from %s:%d...", *addr)
     logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(recv_data))
 
@@ -481,7 +481,7 @@ def handle_natneg_natify_request(nn, recv_data, addr, socket):
     00 00 00 00       - NAT mapping scheme?
     00 (x50)          - Game name?
     """
-    port_type = "%02x" % ord(recv_data[12])
+    port_type = "%02x" % recv_data[12]
     logger.log(logging.DEBUG, "Received natify command from %s:%d...", *addr)
 
     output = bytearray(recv_data)

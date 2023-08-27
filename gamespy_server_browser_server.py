@@ -251,7 +251,7 @@ class Session(LineReceiver):
                     self.log(logging.DEBUG, "Received keep alive from %s:%s...", self.address.host, self.address.port)
 
                 else:
-                    self.log(logging.DEBUG, "Received unknown command (%02x) from %s:%s...", ord(packet[2]), self.address.host, self.address.port)
+                    self.log(logging.DEBUG, "Received unknown command (%02x) from %s:%s...", packet[2], self.address.host, self.address.port)
                     self.log(logging.DEBUG, "%s", utils.pretty_print_hex(bytearray(packet)))
         except:
             self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())

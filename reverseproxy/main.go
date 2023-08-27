@@ -47,7 +47,7 @@ func ProxyHandler(ctx *fasthttp.RequestCtx) {
 
 func main() {
 	fmt.Println("Proxy server started on :80")
-	proxy.SetProduction()
+	proxy.SetProduction() // Hides extra debug output
 	if err := fasthttp.ListenAndServe(":80", ProxyHandler); err != nil {
 		log.Fatal(err)
 	}

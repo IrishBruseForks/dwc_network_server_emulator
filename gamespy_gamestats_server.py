@@ -217,7 +217,7 @@ class Gamestats(LineReceiver):
         self.log(logging.DEBUG, "SENDING: '%s'...", msg)
 
         msg = self.crypt(msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_ka(self, data_parsed):
         msg = gs_query.create_gamespy_message([
@@ -228,7 +228,7 @@ class Gamestats(LineReceiver):
         self.log(logging.DEBUG, "SENDING: '%s'...", msg)
 
         msg = self.crypt(msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
         return
 
     def perform_setpd(self, data_parsed):
@@ -245,7 +245,7 @@ class Gamestats(LineReceiver):
         self.log(logging.DEBUG, "SENDING: '%s'...", msg)
 
         msg = self.crypt(msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
         # TODO: Return error message.
         if int(data_parsed['pid']) != self.profileid:
@@ -340,7 +340,7 @@ class Gamestats(LineReceiver):
 
         self.log(logging.DEBUG, "SENDING: '%s'...", msg)
         msg = self.crypt(msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_newgame(self, data_parsed):
         # No op

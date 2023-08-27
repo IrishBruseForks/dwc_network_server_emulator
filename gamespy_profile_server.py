@@ -280,7 +280,7 @@ class PlayerSession(LineReceiver):
                 ])
 
                 self.log(logging.DEBUG, "SENDING: %s", msg)
-                self.transport.write(bytes(msg))
+                self.transport.write(msg.encode("ascii"))
 
                 buddy_list = make_list(self.buddies)
                 msg = gs_query.create_gamespy_message([
@@ -290,7 +290,7 @@ class PlayerSession(LineReceiver):
                 ])
 
                 self.log(logging.DEBUG, "SENDING: %s", msg)
-                self.transport.write(bytes(msg))
+                self.transport.write(msg.encode("ascii"))
 
             msg = gs_query.create_gamespy_message([
                 ('__cmd__', "lc"),
@@ -347,7 +347,7 @@ class PlayerSession(LineReceiver):
                 ('id', data_parsed['id']),
             ])
             self.log(logging.DEBUG, "SENDING: %s", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
     def perform_logout(self, data_parsed):
         self.log(logging.INFO, "Session %s has logged off", data_parsed['sesskey'])
@@ -495,7 +495,7 @@ class PlayerSession(LineReceiver):
 
                 if dest_profileid in self.sessions:
                     self.log(logging.DEBUG, "SENDING TO %s:%s: %s", self.sessions[dest_profileid].address.host, self.sessions[dest_profileid].address.port, msg)
-                    self.sessions[dest_profileid].transport.write(bytes(msg))
+                    self.sessions[dest_profileid].transport.write(msg.encode("ascii"))
                     self.send_status_to_friends(dest_profileid)
                     self.get_status_from_friends(dest_profileid)
                 else:
@@ -584,7 +584,7 @@ class PlayerSession(LineReceiver):
             ('msg', ""),
         ])
 
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_delbuddy(self, data_parsed):
         """Sample:
@@ -645,7 +645,7 @@ class PlayerSession(LineReceiver):
                 #          self.sessions[
                 #              buddy['buddyProfileId']
                 #          ].address.port, msg)
-                self.sessions[buddy['buddyProfileId']].transport.write(bytes(msg))
+                self.sessions[buddy['buddyProfileId']].transport.write(msg.encode("ascii"))
 
     def get_status_from_friends(self, buddy_profileid=None):
         """This will be called when the player logs in.
@@ -679,7 +679,7 @@ class PlayerSession(LineReceiver):
                 ('msg', status_msg),
             ])
 
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
     def get_buddy_authorized(self):
         buddies = self.db.buddy_need_auth_message(self.profileid)
@@ -693,7 +693,7 @@ class PlayerSession(LineReceiver):
                  " your list"),
             ])
 
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
             self.db.buddy_sent_auth_message(buddy['userProfileId'], buddy['buddyProfileId'])
 
     def get_buddy_requests(self):
@@ -720,7 +720,7 @@ class PlayerSession(LineReceiver):
             ('msg', msg),
         ])
 
-        session.transport.write(bytes(msg))
+        session.transport.write(msg.encode("ascii"))
 
     def get_pending_messages(self):
         messages = self.db.get_pending_messages(self.profileid)
@@ -728,9 +728,9 @@ class PlayerSession(LineReceiver):
         for message in messages:
             if message['sourceid'] not in self.blocked:
                 try:
-                    self.transport.write(bytes(message['msg']))
+                    self.transport.write(message['msg'].encode("ascii"))
                 except:
-                    self.transport.write(bytes(message['msg'], "utf-8"))
+                    self.transport.write(message['msg'].encode("utf-8"))
 
 
 if __name__ == "__main__":
