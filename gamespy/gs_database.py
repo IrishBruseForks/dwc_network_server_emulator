@@ -1,22 +1,23 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sqlite3
@@ -256,8 +257,7 @@ class GamespyDatabase(object):
             password = md5.hexdigest()
 
             with Transaction(self.conn) as tx:
-                q = "INSERT INTO users VALUES" \
-                    " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                q = "INSERT INTO users VALUES" " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
                 tx.nonquery(q, (profileid, str(userid), password, gsbrcd, email, uniquenick, pid, lon, lat, loc, firstname, lastname, stat, partnerid, console, csnum, cfc, bssid, devname, birth, gameid, enabled, zipcode, aim))
 
             return profileid
@@ -285,8 +285,7 @@ class GamespyDatabase(object):
             enabled = 1
 
             with Transaction(self.conn) as tx:
-                q = "INSERT INTO users VALUES" \
-                    " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                q = "INSERT INTO users VALUES" " (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
                 tx.nonquery(q, (profileid, str(userid), password, gsbrcd, email, uniquenick, pid, lon, lat, loc, firstname, lastname, stat, partnerid, console, csnum, cfc, bssid, devname, birth, gameid, enabled, zipcode, aim))
 
             return profileid

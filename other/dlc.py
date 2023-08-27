@@ -1,21 +1,22 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2016 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2016 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
@@ -69,8 +70,7 @@ def filter_list(data, attr1=None, attr2=None, attr3=None, num=None, offset=None)
     If nothing matches, at least return a newline.
     Pokemon BW at least expects this and will error without it.
     """
-    if attr1 is None and attr2 is None and attr3 is None and \
-       num is None and offset is None:
+    if attr1 is None and attr2 is None and attr3 is None and num is None and offset is None:
         # Nothing to filter, just return the input data
         return data
 
@@ -80,11 +80,8 @@ def filter_list(data, attr1=None, attr2=None, attr3=None, num=None, offset=None)
         def nc(a, b):
             """Filter nc."""
             return a is None or a == b
-        return \
-            len(data) == 6 and \
-            nc(attr1, data[2]) and \
-            nc(attr2, data[3]) and \
-            nc(attr3, data[4])
+
+        return len(data) == 6 and nc(attr1, data[2]) and nc(attr2, data[3]) and nc(attr3, data[4])
 
     output = [line for line in data.splitlines() if attrs(line.split("\t"))]
 

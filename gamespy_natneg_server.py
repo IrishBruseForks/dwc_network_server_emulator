@@ -269,7 +269,7 @@ def handle_natneg_stateupdate(nn, recv_data, addr, socket):
     """
     logger.log(logging.WARNING, "Received unimplemented command NN_STATEUPDATE (0x04)"
                " from %s:%d...", *addr)
-    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
+    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(4))
 
 
 def handle_natneg_connect(nn, recv_data, addr, socket):
@@ -384,7 +384,7 @@ def handle_natneg_backup_ack(nn, recv_data, addr, socket):
     """
     logger.log(logging.WARNING, "Received server record type command NN_BACKUP_ACK (0x09)"
                " from %s:%d...", *addr)
-    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
+    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(9))
 
 
 def handle_natneg_address_check(nn, recv_data, addr, socket):
@@ -452,7 +452,7 @@ def handle_natneg_address_reply(nn, recv_data, addr, socket):
     """
     logger.log(logging.WARNING, "Received server record type command NN_ADDRESS_REPLY (0x0B)"
                " from %s:%d...", *addr)
-    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(output))
+    logger.log(logging.DEBUG, "%s", utils.pretty_print_hex(0xB))
 
 
 def handle_natneg_natify_request(nn, recv_data, addr, socket):
