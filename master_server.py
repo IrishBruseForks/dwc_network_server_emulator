@@ -58,7 +58,6 @@ if __name__ == "__main__":
         GameSpyProfileServer,
         GameSpyPlayerSearchServer,
         GameSpyGamestatsServer,
-        # GameSpyServerBrowserServer,
         GameSpyNatNegServer,
         NasServer,
         Dls1Server,

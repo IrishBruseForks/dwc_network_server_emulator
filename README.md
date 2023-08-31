@@ -1,9 +1,13 @@
-dwc_network_server_emulator   
+dwc_network_server_emulator
 ===========================
-  
-This fork adds python 3 support and a reverse proxy skipping the need for apache on windows
 
-Requirements:
--------------
-- Python 3
-- Twisted `pip install Twisted`
+This fork adds python 3 support and a reverse proxy skipping the need for apac
+
+## Install Requirements
+
+```shell
+pip install -r requirements.txt
+```
+
+Helpfull info:
+https://mariokartwii.com/showthread.php?tid=885

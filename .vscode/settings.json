@@ -13,7 +13,7 @@
   "[python]": {
     "editor.defaultFormatter": "eeyore.yapf"
   },
-  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.typeCheckingMode": "basic",
   "explorer.excludeGitIgnore": false,
   "mypy-type-checker.importStrategy": "fromEnvironment"
 }

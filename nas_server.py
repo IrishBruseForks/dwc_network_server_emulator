@@ -159,7 +159,7 @@ def handle_ac_svcloc(handler, db, addr, post):
     return ret
 
 
-def handle_ac(handler, addr, post):
+def handle_ac(handler, addr, post: dict[str, bytes]):
     """Handle ac POST request."""
     logger.log(logging.DEBUG, "Ac request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
@@ -228,7 +228,7 @@ class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("X-Organization", "Nintendo")
             self.send_header("Server", "BigIP")
             self.end_headers()
-            self.wfile.write("ok")
+            self.wfile.write(b"ok")
         except:
             logger.log(logging.ERROR, "Exception occurred on GET request!")
             logger.log(logging.ERROR, "%s", traceback.format_exc())

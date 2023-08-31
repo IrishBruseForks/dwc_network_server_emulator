@@ -304,42 +304,10 @@ def pretty_print_hex(orig_data, cols=16, sep=' '):
     return output
 
 
-# def pretty_print_hex(orig_data, cols=16):
-#    """Takes ~1.5s per characters"""
-#
-#    data = bytearray(orig_data)
-#    output = "\n"
-#
-#    for i in range(len(data) / cols + 1):
-#        output += "%08x | " % (i * 16)
-#
-#        c = 0
-#        for x in range(cols):
-#            if (i * cols + x + 1) > len(data):
-#                break
-#
-#            output += "%02x " % data[i * cols + x]
-#            c += 1
-#
-#        c = cols - c
-#        output += " " * (c * 3 + 1)
-#        for x in range(cols):
-#            if (i * cols + x + 1) > len(data):
-#                break
-#
-#            if not chr(data[i * cols + x]) in string.printable:
-#                output += "."
-#            else:
-#                output += "%c" % data[i * cols + x]
-#        output += "\n"
-#
-#    return output
-
-
-def qs_to_dict(s: bytes):
+def qs_to_dict(s: str) -> dict[str, str]:
     """Convert query string to dict."""
-    parse = urllib.parse.parse_qs(s, True)
-    ret: dict[str, bytes] = {}
+    parse: dict[str, list[str]] = urllib.parse.parse_qs(s, True)
+    ret: dict[str, str] = {}
 
     for k, v in parse.items():
         try:
@@ -348,7 +316,7 @@ def qs_to_dict(s: bytes):
             # For the most part it's not important since it's mostly
             # used for the devname/ingamesn fields.
             url = urllib.parse.unquote(v[0]).replace("*", "=").replace("?", "/").replace(">", "+").replace("-", "/")
-            ret[k] = base64.b64decode(url)
+            ret[k] = base64.b64decode(url).decode("ascii")
         except TypeError:
             """
             print("Could not decode following string: ret[%s] = %s"

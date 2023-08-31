@@ -3,6 +3,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	proxy "github.com/gophemt/fasthttp-reverse-proxy"
 	"github.com/valyala/fasthttp"
@@ -12,8 +14,9 @@ import (
 var (
 	nasServerPort      = 9000
 	storageServerPort  = 8000
-	nasServerProxy     = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", "127.0.0.1", nasServerPort))
-	storageServerProxy = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", "127.0.0.1", storageServerPort))
+	ip                 string
+	nasServerProxy     *proxy.ReverseProxy
+	storageServerProxy *proxy.ReverseProxy
 )
 
 // ProxyHandler ... fasthttp.RequestHandler func
@@ -46,8 +49,20 @@ func ProxyHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func main() {
-	fmt.Println("Proxy server started on :80")
 	proxy.SetProduction() // Hides extra debug output
+
+	fmt.Println("Proxy server started on :80")
+
+	content, err := os.ReadFile("ip.txt")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	ip = strings.TrimSpace(string(content))
+
+	nasServerProxy = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", ip, nasServerPort))
+	storageServerProxy = proxy.NewReverseProxy(fmt.Sprintf("%v:%d", ip, storageServerPort))
+
 	if err := fasthttp.ListenAndServe(":80", ProxyHandler); err != nil {
 		log.Fatal(err)
 	}
