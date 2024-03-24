@@ -1,29 +1,30 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2014 msoucy
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2014 msoucy
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
 import time
-import BaseHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import traceback
 
 from gamespy import gs_database
@@ -35,8 +36,7 @@ logger = dwc_config.get_logger('NasServer')
 
 def handle_post(handler, addr, post):
     """Handle unknown path."""
-    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!",
-               handler.path, *addr)
+    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!", handler.path, *addr)
     handler.send_response(404)
     return None
 
@@ -59,8 +59,7 @@ def handle_ac_acctcreate(handler, db, addr, post):
             "locator": "gamespy.com",
             "reason": "User banned."
         }
-        logger.log(logging.DEBUG, "Acctcreate denied for banned user %s",
-                   str(post))
+        logger.log(logging.DEBUG, "Acctcreate denied for banned user %s", str(post))
     else:
         ret = {
             "retry": "0",
@@ -160,13 +159,12 @@ def handle_ac_svcloc(handler, db, addr, post):
     return ret
 
 
-def handle_ac(handler, addr, post):
+def handle_ac(handler, addr, post: dict[str, bytes]):
     """Handle ac POST request."""
-    logger.log(logging.DEBUG, "Ac request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Ac request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
-    action = str(post["action"]).lower()
+    action = post["action"].lower()
     command = handler.ac_actions.get(action, handle_ac_action)
     ret = command(handler, gs_database.GamespyDatabase(), addr, post)
 
@@ -180,8 +178,7 @@ def handle_ac(handler, addr, post):
 
 def handle_pr(handler, addr, post):
     """Handle pr POST request."""
-    logger.log(logging.DEBUG, "Pr request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Pr request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
     words = len(post["words"].split('\t'))
@@ -205,7 +202,7 @@ def handle_pr(handler, addr, post):
     return utils.dict_to_qs(ret)
 
 
-class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class NasHTTPServerHandler(http.server.BaseHTTPRequestHandler):
     """Nintendo NAS server handler."""
 
     post_paths = {
@@ -231,7 +228,7 @@ class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_header("X-Organization", "Nintendo")
             self.send_header("Server", "BigIP")
             self.end_headers()
-            self.wfile.write("ok")
+            self.wfile.write(b"ok")
         except:
             logger.log(logging.ERROR, "Exception occurred on GET request!")
             logger.log(logging.ERROR, "%s", traceback.format_exc())
@@ -239,11 +236,10 @@ class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             length = int(self.headers['content-length'])
-            post = utils.qs_to_dict(self.rfile.read(length))
-            client_address = (
-                self.headers.get('x-forwarded-for', self.client_address[0]),
-                self.client_address[1]
-            )
+            qs = self.rfile.read(length).decode("ascii")
+            print(qs)
+            post = utils.qs_to_dict(qs)
+            client_address = (self.headers.get('x-forwarded-for', self.client_address[0]), self.client_address[1])
             post['ipaddr'] = client_address[0]
 
             command = self.post_paths.get(self.path, handle_post)
@@ -252,23 +248,23 @@ class NasHTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if ret is not None:
                 self.send_header("Content-Length", str(len(ret)))
                 self.end_headers()
-                self.wfile.write(ret)
+                self.wfile.write(ret.encode("ascii"))
         except:
             logger.log(logging.ERROR, "Exception occurred on POST request!")
             logger.log(logging.ERROR, "%s", traceback.format_exc())
 
 
-class NasHTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class NasHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     """Threading HTTP server."""
     pass
 
 
 class NasServer(object):
+
     def start(self):
         address = dwc_config.get_ip_port('NasServer')
         httpd = NasHTTPServer(address, NasHTTPServerHandler)
-        logger.log(logging.INFO, "Now listening for connections on %s:%d...",
-                   *address)
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", *address)
         httpd.serve_forever()
 
 

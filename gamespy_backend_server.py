@@ -1,55 +1,54 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Master server list server
 
 Basic idea:
-    The server listing does not need to be persistent, and it must be easily
-    searchable for any unknown parameters. So instead of using a SQL database,
-    I've opted to create a server list database server which communicates
-    between the server browser and the qr server. The server list database
-    will be stored in dictionaries as to allow dynamic columns that can be
-    easily searched. The main reason for this configuration is because it
-    cannot be guaranteed what data a game's server will required. For example,
-    in addition to the common fields such as publicip, numplayers, dwc_pid,
-    etc, Lost Magic also uses fields such as LMname, LMsecN, LMrating,
-    LMbtmode, and LMversion.
+The server listing does not need to be persistent, and it must be easily
+searchable for any unknown parameters. So instead of using a SQL database,
+I've opted to create a server list database server which communicates
+between the server browser and the qr server. The server list database
+will be stored in dictionaries as to allow dynamic columns that can be
+easily searched. The main reason for this configuration is because it
+cannot be guaranteed what data a game's server will required. For example,
+in addition to the common fields such as publicip, numplayers, dwc_pid,
+etc, Lost Magic also uses fields such as LMname, LMsecN, LMrating,
+LMbtmode, and LMversion.
 
-    It would be possible to create game-specific databases but this would be
-    more of a hassle and less universal. It would also be possible pickle a
-    dictionary containing all of the fields and store it in a SQL database
-    instead, but that would require unpickling every server each time you want
-    to match search queries which would cause overhead if there are a lot of
-    running servers. One trade off here is that we'll be using more memory by
-    storing each server as a dictionary in the memory instead of storing it in
-    a SQL database.
+It would be possible to create game-specific databases but this would be
+more of a hassle and less universal. It would also be possible pickle a
+dictionary containing all of the fields and store it in a SQL database
+instead, but that would require unpickling every server each time you want
+to match search queries which would cause overhead if there are a lot of
+running servers. One trade off here is that we'll be using more memory by
+storing each server as a dictionary in the memory instead of storing it in
+a SQL database.
 
- - qr_server and server_browser both will act as clients to
-   gs_server_database.
- - qr_server will send an add and/or delete to add or remove servers from the
-   server list.
- - server_browser will send a request with the game name followed by optional
-   search parameters to get a list of servers.
+- qr_server and server_browser both will act as clients to gs_server_database.
+- qr_server will send an add and/or delete to add or remove servers from the server list.
+- server_browser will send a request with the game name followed by optional search parameters to get a list of servers.
 """
 
 import logging
 import time
 import ast
+from typing import Callable
 
 from multiprocessing.managers import BaseManager
 from multiprocessing import freeze_support
@@ -69,61 +68,32 @@ class TokenType:
 
 
 class GameSpyServerDatabase(BaseManager):
+    find_servers: Callable[[str, str, str, int], list]
     pass
 
 
 class GameSpyBackendServer(object):
+
     def __init__(self):
         self.server_list = {}
         self.natneg_list = {}
 
-        GameSpyServerDatabase.register(
-            "get_server_list",
-            callable=lambda: self.server_list
-        )
-        GameSpyServerDatabase.register(
-            "find_servers",
-            callable=self.find_servers
-        )
-        GameSpyServerDatabase.register(
-            "find_server_by_address",
-            callable=self.find_server_by_address
-        )
-        GameSpyServerDatabase.register(
-            "find_server_by_local_address",
-            callable=self.find_server_by_local_address
-        )
-        GameSpyServerDatabase.register(
-            "update_server_list",
-            callable=self.update_server_list
-        )
-        GameSpyServerDatabase.register(
-            "delete_server",
-            callable=self.delete_server
-        )
-        GameSpyServerDatabase.register(
-            "add_natneg_server",
-            callable=self.add_natneg_server
-        )
-        GameSpyServerDatabase.register(
-            "get_natneg_server",
-            callable=self.get_natneg_server
-        )
-        GameSpyServerDatabase.register(
-            "delete_natneg_server",
-            callable=self.delete_natneg_server
-        )
+        GameSpyServerDatabase.register("get_server_list", callable=lambda: self.server_list)
+        GameSpyServerDatabase.register("find_servers", callable=self.find_servers)
+        GameSpyServerDatabase.register("find_server_by_address", callable=self.find_server_by_address)
+        GameSpyServerDatabase.register("find_server_by_local_address", callable=self.find_server_by_local_address)
+        GameSpyServerDatabase.register("update_server_list", callable=self.update_server_list)
+        GameSpyServerDatabase.register("delete_server", callable=self.delete_server)
+        GameSpyServerDatabase.register("add_natneg_server", callable=self.add_natneg_server)
+        GameSpyServerDatabase.register("get_natneg_server", callable=self.get_natneg_server)
+        GameSpyServerDatabase.register("delete_natneg_server", callable=self.delete_natneg_server)
 
     def start(self):
         address = dwc_config.get_ip_port('GameSpyManager')
-        password = ""
 
-        logger.log(logging.INFO,
-                   "Started server on %s:%d...",
-                   address[0], address[1])
+        logger.log(logging.INFO, "Started server on %s:%d...", address[0], address[1])
 
-        manager = GameSpyServerDatabase(address=address,
-                                        authkey=password)
+        manager = GameSpyServerDatabase(address=address)
         server = manager.get_server()
         server.serve_forever()
 
@@ -186,8 +156,7 @@ class GameSpyBackendServer(object):
                     # >= or <=
                     i += 1
 
-            elif i + 1 < len(filters) and filters[i] == "!" and \
-                    filters[i + 1] == "=":
+            elif i + 1 < len(filters) and filters[i] == "!" and filters[i + 1] == "=":
                 i += 2
                 token_type = TokenType.TOKEN
 
@@ -214,8 +183,7 @@ class GameSpyBackendServer(object):
                 if i < len(filters) and filters[i] == "\"":
                     i += 1  # Skip quotation mark
 
-            elif i + 1 < len(filters) and filters[i] == '-' and \
-                    filters[i + 1].isdigit():
+            elif i + 1 < len(filters) and filters[i] == '-' and filters[i + 1].isdigit():
                 # Negative number
                 token_type = TokenType.NUMBER
                 i += 1
@@ -229,14 +197,11 @@ class GameSpyBackendServer(object):
                 elif filters[i].isalpha():
                     token_type = TokenType.FIELD
 
-                while i < len(filters) and (filters[i].isalnum() or
-                                            filters[i] in special_chars) and \
-                        filters[i] not in "!=>< ":
+                while i < len(filters) and (filters[i].isalnum() or filters[i] in special_chars) and filters[i] not in "!=>< ":
                     i += 1
 
         token = filters[start:i]
-        if token_type == TokenType.FIELD and \
-           (token.lower() == "and" or token.lower() == "or"):
+        if token_type == TokenType.FIELD and (token.lower() == "and" or token.lower() == "or"):
             token = token.lower()
 
         return token, i, token_type
@@ -269,20 +234,21 @@ class GameSpyBackendServer(object):
         return output, variables
 
     def validate_ast(self, node, num_literal_only, is_sql=False):
-        # This function tries to verify that the expression is a valid
-        # expression before it gets evaluated.
-        # Anything besides the whitelisted things below are strictly
-        # forbidden:
-        # - String literals
-        # - Number literals
-        # - Binary operators (CAN ONLY BE PERFORMED ON TWO NUMBER LITERALS)
-        # - Comparisons (cannot use 'in', 'not in', 'is', 'is not' operators)
-        #
-        # Anything such as variables or arrays or function calls are NOT
-        # VALID.
-        # Never run the expression received from the client before running
-        # this function on the expression first.
-        # print type(node)
+        """
+        This function tries to verify that the expression is a valid
+        expression before it gets evaluated.
+        Anything besides the whitelisted things below are strictly
+        forbidden:
+        - String literals
+        - Number literals
+        - Binary operators (CAN ONLY BE PERFORMED ON TWO NUMBER LITERALS)
+        - Comparisons (cannot use 'in', 'not in', 'is', 'is not' operators)
+
+        Anything such as variables or arrays or function calls are NOT
+        VALID.
+        Never run the expression received from the client before running
+        this function on the expression first.
+        """
 
         # Only allow literals, comparisons, and math operations
         valid_node = False
@@ -302,11 +268,7 @@ class GameSpyBackendServer(object):
 
         elif isinstance(node, ast.BinOp):
             # Allow SQL_COMMAND infix operator with more types
-            is_sql |= \
-                hasattr(node, "left") and \
-                hasattr(node.left, "right") and \
-                isinstance(node.left.right, ast.Name) and \
-                node.left.right.id in sql_commands
+            is_sql |= hasattr(node, "left") and hasattr(node.left, "right") and isinstance(node.left.right, ast.Name) and node.left.right.id in sql_commands  # type: ignore
             valid_node = self.validate_ast(node.left, True, is_sql)
 
             if valid_node:
@@ -328,8 +290,7 @@ class GameSpyBackendServer(object):
                 # comparison operators. These are python-specific and the
                 # games have no way of knowing what they are, so there's no
                 # reason to keep them around.
-                if isinstance(op, ast.Is) or isinstance(op, ast.IsNot) or \
-                   isinstance(op, ast.In) or isinstance(op, ast.NotIn):
+                if isinstance(op, ast.Is) or isinstance(op, ast.IsNot) or isinstance(op, ast.In) or isinstance(op, ast.NotIn):
                     valid_node = False
                     break
 
@@ -375,11 +336,9 @@ class GameSpyBackendServer(object):
 
                         elif token_type == TokenType.NUMBER:
                             for idx2 in range(idx + 1, len(translated)):
-                                _, _, token_type = \
-                                    self.get_token(translated[idx2])
+                                _, _, token_type = self.get_token(translated[idx2])
 
-                                if token_type == TokenType.TOKEN and \
-                                   translated[idx2] not in ('(', ')'):
+                                if token_type == TokenType.TOKEN and translated[idx2] not in ('(', ')'):
                                     if idx2 == idx + 1:
                                         # Skip boolean operator if it's the
                                         # first token on the right
@@ -389,8 +348,7 @@ class GameSpyBackendServer(object):
                                     token = str(int(token))
                                     break
 
-                                elif token_type == TokenType.STRING or \
-                                        token_type == TokenType.NUMBER:
+                                elif token_type == TokenType.STRING or token_type == TokenType.NUMBER:
                                     if token_type == TokenType.STRING:
                                         # Found string on far right, turn left
                                         # into string as well
@@ -415,9 +373,7 @@ class GameSpyBackendServer(object):
 
                 if not valid_filter:
                     # Return only anything matched up until this point.
-                    logger.log(logging.WARNING,
-                               "Invalid filter(s): %s",
-                               filters)
+                    logger.log(logging.WARNING, "Invalid filter(s): %s", q)
                     # stop_search = True
                     continue
                 else:
@@ -459,11 +415,7 @@ class GameSpyBackendServer(object):
                 result['localip' + str(i)] = server['localip' + str(i)]
                 i += 1
 
-            attrs = [
-                    "localport", "natneg",
-                    "publicip", "publicport",
-                    "__session__", "__console__"
-            ]
+            attrs = ["localport", "natneg", "publicip", "publicport", "__session__", "__console__"]
             result.update({name: server[name]
                            for name in attrs if name in server})
 
@@ -479,10 +431,6 @@ class GameSpyBackendServer(object):
 
             result['requested'] = requested
             servers.append(result)
-
-        logger.log(logging.DEBUG,
-                   "Matched %d servers in %s seconds",
-                   len(servers), (time.time() - start))
 
         return servers
 
@@ -500,13 +448,9 @@ class GameSpyBackendServer(object):
         value['__session__'] = session
         value['__console__'] = console
 
-        logger.log(logging.DEBUG,
-                   "Added %s to the server list for %s",
-                   value, gameid)
+        logger.log(logging.DEBUG, "Added %s to the server list for %s", value, gameid)
         self.server_list[gameid].append(value)
-        logger.log(logging.DEBUG,
-                   "%s servers: %d",
-                   gameid, len(self.server_list[gameid]))
+        logger.log(logging.DEBUG, "%s servers: %d", gameid, len(self.server_list[gameid]))
 
         return value
 
@@ -517,25 +461,20 @@ class GameSpyBackendServer(object):
 
         # Remove all servers hosted by the given session id.
         count = len(self.server_list[gameid])
-        self.server_list[gameid] = [x for x in self.server_list[gameid]
-                                    if x['__session__'] != session]
+        self.server_list[gameid] = [x for x in self.server_list[gameid] if x['__session__'] != session]
         count -= len(self.server_list[gameid])
-        logger.log(logging.DEBUG,
-                   "Deleted %d %s servers where session = %d",
-                   count, gameid, session)
+        logger.log(logging.DEBUG, "Deleted %d %s servers where session = %d", count, gameid, session)
 
     def find_server_by_address(self, ip, port, gameid=None):
         if gameid is None:
             # Search all servers
             for gameid in self.server_list:
                 for server in self.server_list[gameid]:
-                    if server['publicip'] == ip and \
-                       (not port or server['publicport'] == str(port)):
+                    if server['publicip'] == ip and (not port or server['publicport'] == str(port)):
                         return server
         else:
             for server in self.server_list[gameid]:
-                if server['publicip'] == ip and \
-                   (not port or server['publicport'] == str(port)):
+                if server['publicip'] == ip and (not port or server['publicport'] == str(port)):
                     return server
 
         return None
@@ -553,13 +492,9 @@ class GameSpyBackendServer(object):
             best_match = None
 
             for server in self.server_list[gameid]:
-                logger.log(logging.DEBUG,
-                           "publicip: %s == %s ? %d localport: %s == %s ? %d",
-                           server['publicip'], publicip,
-                           server['publicip'] == publicip,
-                           server['localport'],
-                           str(localport),
-                           server['localport'] == str(localport))
+                ip = server['publicip']
+                port = server['localport']
+                logger.log(logging.DEBUG, "publicip: %s == %s ? %d localport: %s == %s ? %d", ip, publicip, ip == publicip, port, str(localport), port == str(localport))
                 if server['publicip'] == publicip:
                     if server['localport'] == str(localport):
                         best_match = server
@@ -581,9 +516,7 @@ class GameSpyBackendServer(object):
                         best_match = server
 
             if best_match is None:
-                logger.log(logging.DEBUG,
-                           "Couldn't find a match for %s",
-                           publicip)
+                logger.log(logging.DEBUG, "Couldn't find a match for %s", publicip)
 
             return best_match
 

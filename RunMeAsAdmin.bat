@@ -1,0 +1,17 @@
+echo 192.168.15.155 wiimmfi.de > C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 gamestats.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 gamestats2.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 gpcm.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 gpsp.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.available.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.gamestats.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.gamestats2.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.master.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.ms19.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.natneg1.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.natneg2.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.natneg3.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 mariokartwii.sake.gs.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 naswii.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 nas.nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts
+echo 192.168.15.155 nintendowifi.net >> C:\Windows\System32\drivers\etc\hosts

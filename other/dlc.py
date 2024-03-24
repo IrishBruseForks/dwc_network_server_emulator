@@ -1,21 +1,22 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2016 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2016 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
@@ -23,7 +24,6 @@ import random
 import time
 
 from gamespy.gs_database import GamespyDatabase
-
 
 # If a game from this list requests a file listing, the server will return
 # that only one exists and return a random one.
@@ -49,7 +49,7 @@ gamecodes_return_random_file = [
     'IPGI',
     'IPGJ',
     'IPGK',
-    'IPGS'
+    'IPGS',
 ]
 
 filter_bit_g5 = {
@@ -64,29 +64,26 @@ def get_file_count(data):
     return sum(1 for line in data.splitlines() if line)
 
 
-def filter_list(data, attr1=None, attr2=None, attr3=None,
-                num=None, offset=None):
+def filter_list(data, attr1=None, attr2=None, attr3=None, num=None, offset=None):
     """Filter the list based on the attribute fields.
 
     If nothing matches, at least return a newline.
     Pokemon BW at least expects this and will error without it.
     """
-    if attr1 is None and attr2 is None and attr3 is None and \
-       num is None and offset is None:
+    if attr1 is None and attr2 is None and attr3 is None and num is None and offset is None:
         # Nothing to filter, just return the input data
         return data
 
     def attrs(data):
         """Filter attrs."""
+
         def nc(a, b):
             """Filter nc."""
             return a is None or a == b
-        return \
-            len(data) == 6 and \
-            nc(attr1, data[2]) and \
-            nc(attr2, data[3]) and \
-            nc(attr3, data[4])
-    output = filter(lambda line: attrs(line.split("\t")), data.splitlines())
+
+        return len(data) == 6 and nc(attr1, data[2]) and nc(attr2, data[3]) and nc(attr3, data[4])
+
+    output = [line for line in data.splitlines() if attrs(line.split("\t"))]
 
     if offset is not None:
         output = output[offset:]
@@ -188,10 +185,7 @@ def download_list(dlc_path, post):
     else:
         # Doesn't have _list.txt file
         try:
-            ls = [
-                download_size(dlc_path, name)
-                for name in sorted(os.listdir(dlc_path))
-            ]
+            ls = [download_size(dlc_path, name) for name in sorted(os.listdir(dlc_path))]
             list_data = "\r\n".join("\t\t\t\t\t".join(f) for f in ls) + "\r\n"
         except:
             return "\r\n"

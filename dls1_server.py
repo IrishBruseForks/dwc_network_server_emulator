@@ -1,28 +1,29 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2014 msoucy
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2014 msoucy
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
-import BaseHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import os
 import traceback
 
@@ -34,8 +35,7 @@ logger = dwc_config.get_logger('Dls1Server')
 
 def handle_post(handler, addr, post):
     """Handle unknown path."""
-    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!",
-               handler.path, *addr)
+    logger.log(logging.WARNING, "Unknown path request %s from %s:%d!", handler.path, *addr)
     handler.send_response(404)
     return None
 
@@ -74,16 +74,14 @@ def handle_download_contents(handler, dlc_path, post):
     else:
         handler.send_response(200)
         handler.send_header("Content-type", "application/x-dsdl")
-        handler.send_header("Content-Disposition",
-                            'attachment; filename="%s"' % post["contents"])
+        handler.send_header("Content-Disposition", 'attachment; filename="%s"' % post["contents"])
         handler.send_header("X-DLS-Host", "http://127.0.0.1/")
     return ret
 
 
 def handle_download(handler, addr, post):
     """Handle download POST request."""
-    logger.log(logging.DEBUG, "Download request to %s from %s:%d",
-               handler.path, *addr)
+    logger.log(logging.DEBUG, "Download request to %s from %s:%d", handler.path, *addr)
     logger.log(logging.DEBUG, "%s", post)
 
     action = str(post["action"]).lower()
@@ -91,8 +89,7 @@ def handle_download(handler, addr, post):
     dlc_path = os.path.abspath(os.path.join("dlc", post["gamecd"]))
 
     if os.path.commonprefix([dlc_dir, dlc_path]) != dlc_dir:
-        logging.log(logging.WARNING,
-                    'Attempted directory traversal attack "%s",'
+        logging.log(logging.WARNING, 'Attempted directory traversal attack "%s",'
                     ' cancelling.', dlc_path)
         handler.send_response(403)
         return
@@ -104,7 +101,7 @@ def handle_download(handler, addr, post):
     return ret
 
 
-class Dls1HTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Dls1HTTPServerHandler(http.server.BaseHTTPRequestHandler):
     """Nintendo Dls1 server handler."""
 
     post_paths = {
@@ -124,10 +121,7 @@ class Dls1HTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             length = int(self.headers['content-length'])
             post = utils.qs_to_dict(self.rfile.read(length))
-            client_address = (
-                self.headers.get('x-forwarded-for', self.client_address[0]),
-                self.client_address[1]
-            )
+            client_address = (self.headers.get('x-forwarded-for', self.client_address[0]), self.client_address[1])
             post['ipaddr'] = client_address[0]
 
             command = self.post_paths.get(self.path, handle_post)
@@ -142,17 +136,17 @@ class Dls1HTTPServerHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             logger.log(logging.ERROR, "%s", traceback.format_exc())
 
 
-class Dls1HTTPServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class Dls1HTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     """Threading HTTP server."""
     pass
 
 
 class Dls1Server(object):
+
     def start(self):
         address = dwc_config.get_ip_port('Dls1Server')
         httpd = Dls1HTTPServer(address, Dls1HTTPServerHandler)
-        logger.log(logging.INFO, "Now listening for connections on %s:%d...",
-                   *address)
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", *address)
         httpd.serve_forever()
 
 

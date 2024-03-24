@@ -1,21 +1,22 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 msoucy
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 msoucy
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from twisted.web import server, resource
@@ -35,6 +36,7 @@ logger = dwc_config.get_logger('InternalStatsServer')
 
 class GameSpyServerDatabase(BaseManager):
     pass
+
 
 GameSpyServerDatabase.register("get_server_list")
 
@@ -57,17 +59,21 @@ class StatsPage(resource.Resource):
         <tr>
             <td>%s</td>
             <td><center>%d</center></td>
-        </tr>"""  # % (game, len(server_list[game]))
+        </tr>"""
+
+    # % (game, len(server_list[game]))
     footer = """</table>
     <br>
     <i>Last updated: %s</i><br>
-    </html>"""  # % (self.stats.get_last_update_time())
+    </html>"""
+
+    # % (self.stats.get_last_update_time())
 
     def __init__(self, stats):
         self.stats = stats
 
     def render_GET(self, request):
-        if "/".join(request.postpath) == "json":
+        if request.path == b"/json":
             raw = True
             force_update = True
         else:
@@ -93,32 +99,30 @@ class StatsPage(resource.Resource):
         else:
             output = self.header
             if server_list is not None:
-                output += "".join(self.row % (game, len(server_list[game]))
-                                  for game in server_list
-                                  if server_list[game])
+                output += "".join(self.row % (game, len(server_list[game])) for game in server_list if server_list[game])
             output += self.footer % (self.stats.get_last_update_time())
 
-        return output
+        return output.encode("ascii")
 
 
 class InternalStatsServer(object):
-    """Internal Statistics server.
+    """
+    Internal Statistics server.
 
     Running on port 9001 by default: http://127.0.0.1:9001/
     Can be displayed in json format: http://127.0.0.1:9001/json
     """
+
     def __init__(self):
         self.last_update = 0
         self.next_update = 0
         self.server_list = None
         # The number of seconds to wait before updating the server list
-        self.seconds_per_update = 60
+        self.seconds_per_update = 12
 
     def start(self):
         manager_address = dwc_config.get_ip_port('GameSpyManager')
-        manager_password = ""
-        self.server_manager = GameSpyServerDatabase(address=manager_address,
-                                                    authkey=manager_password)
+        self.server_manager = GameSpyServerDatabase(address=manager_address)
         self.server_manager.connect()
 
         site = server.Site(StatsPage(self))
@@ -131,12 +135,10 @@ class InternalStatsServer(object):
             pass
 
     def get_server_list(self, force_update=False):
-        if force_update or self.next_update == 0 or \
-           self.next_update - time.time() <= 0:
+        if force_update or self.next_update == 0 or self.next_update - time.time() <= 0:
             self.last_update = time.time()
             self.next_update = time.time() + self.seconds_per_update
-            self.server_list = self.server_manager.get_server_list() \
-                                                  ._getvalue()
+            self.server_list = self.server_manager.get_server_list()._getvalue()
 
             logger.log(logging.DEBUG, "%s", self.server_list)
 

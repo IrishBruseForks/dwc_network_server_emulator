@@ -1,25 +1,29 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-Server emulator for *.available.gs.nintendowifi.net and
-                    *.master.gs.nintendowifi.net
+Server emulator for
+
+*.available.gs.nintendowifi.net
+*.master.gs.nintendowifi.net
+
 Query and Reporting:
 http://docs.poweredbygamespy.com/wiki/Query_and_Reporting_Overview
 """
@@ -30,7 +34,8 @@ import socket
 import struct
 import threading
 import time
-import Queue
+from typing import Callable
+import queue
 import traceback
 
 from multiprocessing.managers import BaseManager
@@ -45,11 +50,16 @@ logger = dwc_config.get_logger('GameSpyQRServer')
 
 
 class GameSpyServerDatabase(BaseManager):
+    delete_server: Callable
+    update_server_list: Callable
     pass
 
 
 class GameSpyQRServer(object):
+    write_queue: queue.Queue
+
     class Session(object):
+
         def __init__(self, address):
             self.session = ""
             self.challenge = ""
@@ -83,23 +93,15 @@ class GameSpyQRServer(object):
             logger.log(level, msg, *args, **kwargs)
         else:
             if session_id is not None:
-                logger.log(level, "[%s:%d %08x] " + msg,
-                           address[0], address[1], session_id,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d %08x] " + msg, address[0], address[1], session_id, *args, **kwargs)
             else:
-                logger.log(level, "[%s:%d] " + msg,
-                           address[0], address[1],
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d] " + msg, address[0], address[1], *args, **kwargs)
 
     def start(self):
         try:
             manager_address = dwc_config.get_ip_port('GameSpyManager')
-            manager_password = ""
 
-            self.server_manager = GameSpyServerDatabase(
-                address=manager_address,
-                authkey=manager_password
-            )
+            self.server_manager = GameSpyServerDatabase(address=manager_address)
             self.server_manager.connect()
 
             # Start QR server
@@ -109,21 +111,17 @@ class GameSpyQRServer(object):
 
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.socket.bind(address)
-            self.socket.setblocking(0)
+            self.socket.setblocking(False)
 
-            logger.log(logging.INFO,
-                       "Server is now listening on %s:%s...",
-                       address[0], address[1])
+            logger.log(logging.INFO, "Server is now listening on %s:%s...", address[0], address[1])
 
             # Dependencies! I don't really like this solution but it's easier
             # than trying to manage it another way.
             server_browser_server = GameSpyServerBrowserServer(self)
-            server_browser_server_thread = threading.Thread(
-                target=server_browser_server.start
-            )
+            server_browser_server_thread = threading.Thread(target=server_browser_server.start)
             server_browser_server_thread.start()
 
-            self.write_queue = Queue.Queue()
+            self.write_queue = queue.Queue()
             self.db = gs_database.GamespyDatabase()
             threading.Thread(target=self.write_queue_worker).start()
 
@@ -133,17 +131,13 @@ class GameSpyQRServer(object):
                 if ready[0]:
                     try:
                         recv_data, address = self.socket.recvfrom(2048)
-                        self.handle_packet(self.socket, recv_data, address)
+                        self.handle_packet(recv_data, address)
                     except:
-                        logger.log(logging.ERROR,
-                                   "Failed to handle client: %s",
-                                   traceback.format_exc())
+                        logger.log(logging.ERROR, "Failed to handle client: %s", traceback.format_exc())
 
                 self.keepalive_check()
         except:
-            logger.log(logging.ERROR,
-                       "Unknown exception: %s",
-                       traceback.format_exc())
+            logger.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def write_queue_send(self, data, address):
         time.sleep(0.05)
@@ -152,8 +146,7 @@ class GameSpyQRServer(object):
     def write_queue_worker(self):
         while True:
             data, address = self.write_queue.get()
-            threading.Thread(target=self.write_queue_send,
-                             args=(data, address)).start()
+            threading.Thread(target=self.write_queue_send, args=(data, address)).start()
             self.write_queue.task_done()
 
     def update_server_list(self, session_id, k):
@@ -174,15 +167,12 @@ class GameSpyQRServer(object):
 
             # Some memory could be saved by clearing out any unwanted fields
             # from k before sending.
-            self.server_manager.update_server_list(
-                k['gamename'], session_id, k,
-                self.sessions[session_id].console
-            )._getvalue()
+            self.server_manager.update_server_list(k['gamename'], session_id, k, self.sessions[session_id].console)._getvalue()
 
             if session_id in self.sessions:
                 self.sessions[session_id].gamename = k['gamename']
 
-    def handle_packet(self, socket, recv_data, address):
+    def handle_packet(self, recv_data: bytes, address):
         """Tetris DS overlay 10 @ 02144184 - Handle responses back to server.
 
         After some more packet inspection, it seems the format goes something
@@ -284,8 +274,10 @@ class GameSpyQRServer(object):
         https://github.com/sfcspanky/Openspy-Core/tree/master/qr
         Use as reference.
         """
+
         session_id = None
-        if recv_data[0] != '\x09':
+        session_id_raw = b""
+        if recv_data[0] != 0x09:  # availability check
             # Don't add a session if the client is trying to check if the game
             # is available or not
             session_id = struct.unpack("<I", recv_data[1:5])[0]
@@ -297,8 +289,7 @@ class GameSpyQRServer(object):
                 self.sessions[session_id].keepalive = int(time.time())
                 self.sessions[session_id].disconnected = False
 
-            if session_id in self.sessions and \
-               self.sessions[session_id].disconnected:
+            if session_id in self.sessions and self.sessions[session_id].disconnected:
                 return
 
             if session_id in self.sessions:
@@ -306,21 +297,15 @@ class GameSpyQRServer(object):
                 self.sessions[session_id].keepalive = int(time.time())
 
         # Handle commands
-        if recv_data[0] == '\x00':  # Query
-            self.log(logging.DEBUG, address, session_id,
-                     "NOT IMPLEMENTED! Received query from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        if recv_data[0] == 0x00:  # Query
+            self.log(logging.DEBUG, address, session_id, "NOT IMPLEMENTED! Received query from %s:%s... %s", address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x01':  # Challenge
-            self.log(logging.DEBUG, address, session_id,
-                     "Received challenge from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        elif recv_data[0] == 0x01:  # Challenge
+            challengeBytes = recv_data[5:].decode("ascii")
+            self.log(logging.DEBUG, address, session_id, "Received challenge from %s:%s...\n%s", address[0], address[1], challengeBytes)
 
             # Prepare the challenge sent from the server to be compared
-            challenge = gs_utils.prepare_rc4_base64(
-                self.sessions[session_id].secretkey,
-                self.sessions[session_id].challenge
-            )
+            challenge = gs_utils.prepare_rc4_base64(self.sessions[session_id].secretkey, self.sessions[session_id].challenge)
 
             # Compare challenge
             client_challenge = recv_data[5:-1]
@@ -331,38 +316,29 @@ class GameSpyQRServer(object):
                 packet = bytearray([0xfe, 0xfd, 0x0a])
                 packet.extend(session_id_raw)  # Get the session ID
                 self.write_queue.put((packet, address))
-                self.log(logging.DEBUG, address, session_id,
-                         "Sent client registered to %s:%s...",
-                         address[0], address[1])
+                self.log(logging.DEBUG, address, session_id, "Sent client registered to %s:%s...", address[0], address[1])
 
                 if self.sessions[session_id].heartbeat_data is not None:
-                    self.update_server_list(
-                        session_id,
-                        self.sessions[session_id].heartbeat_data
-                    )
+                    self.update_server_list(session_id, self.sessions[session_id].heartbeat_data)
 
             else:
                 # Failed the challenge, request another during the next
                 # heartbeat
                 self.sessions[session_id].sent_challenge = False
-                self.server_manager.delete_server(
-                    self.sessions[session_id].gamename,
-                    session_id
-                )
+                self.server_manager.delete_server(self.sessions[session_id].gamename, session_id)
 
-        elif recv_data[0] == '\x02':  # Echo
-            self.log(logging.DEBUG, address, session_id,
-                     "NOT IMPLEMENTED! Received echo from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        elif recv_data[0] == 0x02:  # Echo
+            self.log(logging.DEBUG, address, session_id, "NOT IMPLEMENTED! Received echo from %s:%s... %s", address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x03':  # Heartbeat
+        elif recv_data[0] == 0x03:  # Heartbeat
             data = recv_data[5:]
-            self.log(logging.DEBUG, address, session_id,
-                     "Received heartbeat from %s:%s... %s",
-                     address[0], address[1], data)
 
             # Parse information from heartbeat here
-            d = data.rstrip('\0').split('\0')
+            b = data.rstrip(b"\0").split(b"\0")
+
+            d = [item.decode("ascii") for item in b]
+
+            self.log(logging.DEBUG, address, session_id, "Received heartbeat from \n%s", d)
 
             # It may be safe to ignore "unknown" keys because the proper key
             # names get filled in later...
@@ -371,37 +347,28 @@ class GameSpyQRServer(object):
                 # self.log(logging.DEBUG, address, session_id,
                 #          "%s = %s",
                 #          d[i], d[i + 1])
-                k[d[i]] = d[i+1]
+                k[d[i]] = d[i + 1]
 
             if self.sessions[session_id].ingamesn is not None:
                 if "gamename" in k and "dwc_pid" in k:
                     try:
-                        profile = self.db.get_profile_from_profileid(
-                            k['dwc_pid']
-                        )
-                        naslogin = self.db.get_nas_login_from_userid(
-                            profile['userid']
-                        )
+                        profile = self.db.get_profile_from_profileid(k['dwc_pid'])
+                        naslogin = self.db.get_nas_login_from_userid(profile['userid'])
                         # Convert to string from unicode (which is just a
                         # base64 string anyway)
-                        self.sessions[session_id].ingamesn = \
-                            str(naslogin['ingamesn'])
-                    except Exception, e:
+                        self.sessions[session_id].ingamesn = str(naslogin['ingamesn'])
+                    except Exception as e:
                         # If the game doesn't have, don't worry about it.
                         pass
 
-                if self.sessions[session_id].ingamesn is not None and \
-                   "ingamesn" not in k:
+                if self.sessions[session_id].ingamesn is not None and "ingamesn" not in k:
                     k['ingamesn'] = self.sessions[session_id].ingamesn
 
             if "gamename" in k:
                 if k['gamename'] in self.secret_key_list:
-                    self.sessions[session_id].secretkey = \
-                        self.secret_key_list[k['gamename']]
+                    self.sessions[session_id].secretkey = self.secret_key_list[k['gamename']]
                 else:
-                    self.log(logging.INFO, address, session_id,
-                             "Connection from unknown game '%s'!",
-                             k['gamename'])
+                    self.log(logging.INFO, address, session_id, "Connection from unknown game '%s'!", k['gamename'])
 
             if self.sessions[session_id].playerid == 0 and "dwc_pid" in k:
                 # Get the player's id and then query the profile to figure
@@ -415,16 +382,10 @@ class GameSpyQRServer(object):
                 if 'gamename' in k:
                     self.sessions[session_id].console = 0
 
-                    if k['gamename'].endswith('ds') or \
-                       k['gamename'].endswith('dsam') or \
-                       k['gamename'].endswith('dsi') or \
-                       k['gamename'].endswith('dsiam'):
+                    if k['gamename'].endswith('ds') or k['gamename'].endswith('dsam') or k['gamename'].endswith('dsi') or k['gamename'].endswith('dsiam'):
                         self.sessions[session_id].console = 0
                         found_console = True
-                    elif k['gamename'].endswith('wii') or \
-                            k['gamename'].endswith('wiiam') or \
-                            k['gamename'].endswith('wiiware') or \
-                            k['gamename'].endswith('wiiwaream'):
+                    elif k['gamename'].endswith('wii') or k['gamename'].endswith('wiiam') or k['gamename'].endswith('wiiware') or k['gamename'].endswith('wiiwaream'):
                         self.sessions[session_id].console = 1
                         found_console = True
 
@@ -433,13 +394,10 @@ class GameSpyQRServer(object):
                     # Try a 3 times before giving up
                     for i in range(0, 3):
                         try:
-                            profile = self.db.get_profile_from_profileid(
-                                self.sessions[session_id].playerid
-                            )
+                            profile = self.db.get_profile_from_profileid(self.sessions[session_id].playerid)
 
                             if "console" in profile:
-                                self.sessions[session_id].console = \
-                                    profile['console']
+                                self.sessions[session_id].console = profile['console']
 
                             break
                         except:
@@ -450,30 +408,19 @@ class GameSpyQRServer(object):
                 # When dwc_hoststate == 2 then it doesn't send an IP,
                 # so calculate it ourselves
                 be = self.sessions[session_id].console != 0
-                k['publicip'] = str(utils.get_ip(
-                    bytearray([int(x) for x in address[0].split('.')]),
-                    0,
-                    be
-                ))
+                k['publicip'] = str(utils.get_ip(bytearray([int(x) for x in address[0].split('.')]), 0, be))
 
-            if 'publicport' in k and \
-               'localport' in k and \
-               k['publicport'] != k['localport']:
-                self.log(logging.DEBUG, address, session_id,
-                         "publicport %s doesn't match localport %s,"
-                         " so changing publicport to %s...",
-                         k['publicport'], k['localport'],
-                         str(address[1]))
+            if 'publicport' in k and 'localport' in k and k['publicport'] != k['localport']:
+                self.log(logging.DEBUG, address, session_id, "publicport %s doesn't match localport %s,"
+                         " so changing publicport to %s...", k['publicport'], k['localport'], str(address[1]))
                 k['publicport'] = str(address[1])
 
             if self.sessions[session_id].sent_challenge:
                 self.update_server_list(session_id, k)
             else:
-                addr_hex = ''.join(["%02X" % int(x)
-                                    for x in address[0].split('.')])
+                addr_hex = ''.join(["%02X" % int(x) for x in address[0].split('.')])
                 port_hex = "%04X" % int(address[1])
-                server_challenge = utils.generate_random_str(6) + '00' + \
-                    addr_hex + port_hex
+                server_challenge = utils.generate_random_str(6) + '00' + addr_hex + port_hex
 
                 self.sessions[session_id].challenge = server_challenge
 
@@ -481,72 +428,48 @@ class GameSpyQRServer(object):
                 packet = bytearray([0xfe, 0xfd, 0x01])
                 # Get the session ID
                 packet.extend(session_id_raw)
-                packet.extend(server_challenge)
-                packet.extend('\x00')
+                packet.extend(server_challenge.encode("ascii"))
+                packet.extend([0])
 
                 self.write_queue.put((packet, address))
-                self.log(logging.DEBUG, address, session_id,
-                         "Sent challenge to %s:%s...",
-                         address[0], address[1])
+                self.log(logging.DEBUG, address, session_id, "Sent challenge to %s:%s...", address[0], address[1])
 
                 self.sessions[session_id].sent_challenge = True
                 self.sessions[session_id].heartbeat_data = k
 
-        elif recv_data[0] == '\x04':  # Add Error
-            self.log(logging.WARNING, address, session_id,
-                     "NOT IMPLEMENTED! Received add error from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        elif recv_data[0] == 0x04:  # Add Error
+            self.log(logging.WARNING, address, session_id, "NOT IMPLEMENTED! Received add error from %s:%s... %s", address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x05':  # Echo Response
-            self.log(logging.WARNING, address, session_id,
-                     "NOT IMPLEMENTED! Received echo response"
-                     " from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        elif recv_data[0] == 0x05:  # Echo Response
+            self.log(logging.WARNING, address, session_id, "NOT IMPLEMENTED! Received echo response"
+                     " from %s:%s... %s", address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x06':  # Client Message
-            self.log(logging.WARNING, address, session_id,
-                     "NOT IMPLEMENTED! Received echo from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+        elif recv_data[0] == 0x06:  # Client Message
+            self.log(logging.WARNING, address, session_id, "NOT IMPLEMENTED! Received echo from %s:%s... %s", address[0], address[1], recv_data[5:])
 
-        elif recv_data[0] == '\x07':  # Client Message Ack
+        elif recv_data[0] == 0x07:  # Client Message Ack
             # self.log(logging.WARNING, address, session_id,
             #          "NOT IMPLEMENTED! Received client message ack"
             #          " from %s:%s... %s",
             #          address[0], address[1], recv_data[5:])
-            self.log(logging.DEBUG, address, session_id,
-                     "Received client message ack from %s:%s...",
-                     address[0], address[1])
+            self.log(logging.DEBUG, address, session_id, "Received client message ack from %s:%s...", address[0], address[1])
 
-        elif recv_data[0] == '\x08':  # Keep Alive
-            self.log(logging.DEBUG, address, session_id,
-                     "Received keep alive from %s:%s...",
-                     address[0], address[1])
+        elif recv_data[0] == 0x08:  # Keep Alive
+            self.log(logging.DEBUG, address, session_id, "Received keep alive from %s:%s...", address[0], address[1])
             self.sessions[session_id].keepalive = int(time.time())
 
-        elif recv_data[0] == '\x09':  # Available
+        elif recv_data[0] == 0x09:  # Available
             # Availability check only sent to *.available.gs.nintendowifi.net
-            self.log(logging.DEBUG, address, session_id,
-                     "Received availability request for '%s' from %s:%s...",
-                     recv_data[5: -1], address[0], address[1])
-            self.write_queue.put((
-                bytearray([0xfe, 0xfd, 0x09, 0x00, 0x00, 0x00, 0x00]),
-                address
-            ))
+            self.log(logging.DEBUG, address, session_id, "Received availability request for '%s' from %s:%s...", recv_data[5:-1].decode("ascii"), address[0], address[1])
+            self.write_queue.put((bytearray([0xfe, 0xfd, 0x09, 0x00, 0x00, 0x00, 0x00]), address))
 
-        elif recv_data[0] == '\x0a':  # Client Registered
+        elif recv_data[0] == 0x0a:  # Client Registered
             # Only sent to client, never received?
-            self.log(logging.WARNING, address, session_id,
-                     "NOT IMPLEMENTED! Received client registered"
-                     " from %s:%s... %s",
-                     address[0], address[1], recv_data[5:])
+            self.log(logging.WARNING, address, session_id, "NOT IMPLEMENTED! Received client registered from %s:%s... %s", address[0], address[1], recv_data[5:])
 
         else:
-            self.log(logging.ERROR, address, session_id,
-                     "Unknown request from %s:%s:",
-                     address[0], address[1])
-            self.log(logging.DEBUG, address, session_id,
-                     "%s",
-                     utils.pretty_print_hex(recv_data))
+            self.log(logging.ERROR, address, session_id, "Unknown request from %s:%s:", address[0], address[1])
+            self.log(logging.DEBUG, address, session_id, "%s", utils.pretty_print_hex(recv_data))
 
     def keepalive_check(self):
         # self.log(logging.DEBUG, None, session_id,
@@ -562,17 +485,9 @@ class GameSpyQRServer(object):
 
             if delta < 0 or delta >= timeout:
                 pruned.append(session_id)
-                self.server_manager.delete_server(
-                    self.sessions[session_id].gamename,
-                    self.sessions[session_id].session
-                )
-                self.log(logging.DEBUG, None, session_id,
-                         "Keep alive check removed %s:%s for game %s."
-                         " Client hasn't responded in %d seconds.",
-                         self.sessions[session_id].address[0],
-                         self.sessions[session_id].address[1],
-                         self.sessions[session_id].gamename,
-                         delta)
+                self.server_manager.delete_server(self.sessions[session_id].gamename, self.sessions[session_id].session)
+                format = "Keep alive check removed %s:%s for game %s. Client hasn't responded in %d seconds."
+                self.log(logging.DEBUG, None, session_id, format, self.sessions[session_id].address[0], self.sessions[session_id].address[1], self.sessions[session_id].gamename, delta)
 
         for session_id in pruned:
             del self.sessions[session_id]

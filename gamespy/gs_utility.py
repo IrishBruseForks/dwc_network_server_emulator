@@ -1,23 +1,24 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2014 msoucy
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2014 msoucy
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import base64
@@ -38,40 +39,37 @@ def generate_secret_keys(filename="gslist.cfg"):
         for line in key_file.readlines():
             # name = line[:54].strip()
             # Probably won't do anything with the name for now.
-            id = line[54:54+19].strip()
-            key = line[54+19:].strip()
+            id = line[54:54 + 19].strip()
+            key = line[54 + 19:].strip()
 
             secret_key_list[id] = key
 
     return secret_key_list
 
 
-def base64_encode(input):
+def base64_encode(input: bytes):
     """Encode input in base64 using GameSpy variant.
 
     GameSpy uses a slightly modified version of base64 which replaces
     +/= with []_
     """
-    output = base64.b64encode(input).replace('+', '[') \
-                                    .replace('/', ']') \
-                                    .replace('=', '_')
+    print(input)
+    output = base64.b64encode(input).decode("ascii").replace('+', '[').replace('/', ']').replace('=', '_')
     return output
 
 
 def base64_decode(input):
     """Decode input in base64 using GameSpy variant."""
-    output = base64.b64decode(input.replace('[', '+')
-                                   .replace(']', '/')
-                                   .replace('_', '='))
+    output = base64.b64decode(input.replace('[', '+').replace(']', '/').replace('_', '='))
     return output
 
 
-def rc4_encrypt(_key, _data):
+def rc4_encrypt(_key: str, _data):
     """
     Tetris DS overlay 10 @ 0216E9B8
     """
-    key = bytearray(_key)
-    data = bytearray(_data)
+    key = bytearray(_key.encode("ascii"))
+    data = bytearray(_data.encode("ascii"))
 
     if len(key) == 0:
         # This shouldn't happen but it apparently can on a rare occasion.
@@ -79,7 +77,7 @@ def rc4_encrypt(_key, _data):
         return
 
     # Key-scheduling algorithm
-    S = range(0x100)
+    S = list(range(0x100))
 
     j = 0
     for i in range(0x100):
@@ -117,7 +115,7 @@ def prepare_rc4_base64(_key, _data):
 
     data.append(0)
 
-    return base64.b64encode(buffer(data))
+    return base64.b64encode(data)
 
 
 def parse_authtoken(authtoken, db):
@@ -135,11 +133,11 @@ def login_profile_via_parsed_authtoken(authtoken_parsed, db):
     console = 0
     userid = authtoken_parsed['userid']
 
-    csnum = authtoken_parsed.get('csnum', '')      # Wii: Serial number
-    cfc = authtoken_parsed.get('cfc', '')          # Wii: Friend code
-    bssid = authtoken_parsed.get('bssid', '')      # NDS: Wifi network's BSSID
+    csnum = authtoken_parsed.get('csnum', '')  # Wii: Serial number
+    cfc = authtoken_parsed.get('cfc', '')  # Wii: Friend code
+    bssid = authtoken_parsed.get('bssid', '')  # NDS: Wifi network's BSSID
     devname = authtoken_parsed.get('devname', '')  # NDS: Device name
-    birth = authtoken_parsed.get('birth', '')      # NDS: User's birthday
+    birth = authtoken_parsed.get('birth', '')  # NDS: User's birthday
 
     # The Wii does not use passwd, so take another uniquely generated string
     # as the password.
@@ -166,19 +164,17 @@ def login_profile_via_parsed_authtoken(authtoken_parsed, db):
 
     valid_user = db.check_user_exists(userid, gsbrcd)
     if valid_user is False:
-        profileid = db.create_user(userid, password, email, uniquenick,
-                                   gsbrcd, console, csnum, cfc, bssid,
-                                   devname, birth, gameid, macadr)
+        profileid = db.create_user(userid, password, email, uniquenick, gsbrcd, console, csnum, cfc, bssid, devname, birth, gameid, macadr)
     else:
         profileid = db.perform_login(userid, password, gsbrcd)
 
     return userid, profileid, gsbrcd, uniquenick
 
 
-def generate_response(challenge, ac_challenge, secretkey, authtoken):
+def generate_response(challenge, ac_challenge: str, secretkey, authtoken):
     """Generate a challenge response."""
     md5 = hashlib.md5()
-    md5.update(ac_challenge)
+    md5.update(ac_challenge.encode("ascii"))
 
     output = md5.hexdigest()
     output += ' ' * 0x30
@@ -188,7 +184,7 @@ def generate_response(challenge, ac_challenge, secretkey, authtoken):
     output += md5.hexdigest()
 
     md5_2 = hashlib.md5()
-    md5_2.update(output)
+    md5_2.update(output.encode("ascii"))
 
     return md5_2.hexdigest()
 
@@ -202,7 +198,7 @@ def generate_proof(challenge, ac_challenge, secretkey, authtoken):
     Maybe combine the two functions later?
     """
     md5 = hashlib.md5()
-    md5.update(ac_challenge)
+    md5.update(ac_challenge.encode("ascii"))
 
     output = md5.hexdigest()
     output += ' ' * 0x30
@@ -212,7 +208,7 @@ def generate_proof(challenge, ac_challenge, secretkey, authtoken):
     output += md5.hexdigest()
 
     md5_2 = hashlib.md5()
-    md5_2.update(output)
+    md5_2.update(output.encode("ascii"))
 
     return md5_2.hexdigest()
 
@@ -249,27 +245,18 @@ class EncTypeX:
     It's kind of sloppy in parts, but it works. Unless there's some issues
     then it'll probably not change any longer.
     """
+
     def __init__(self):
         return
 
-    def decrypt(self, key, validate, data):
-        if not key or not validate or not data:
-            return None
-
-        encxkey = bytearray([0] * 261)
-        data = self.init(encxkey, key, validate, data)
-        self.func6(encxkey, data, len(data))
-
-        return data
-
-    def encrypt(self, key, validate, data):
+    def encrypt(self, key, validate, data: bytes):
         if not key or not validate or not data:
             return None
 
         # Convert data from strings to byte arrays before use or else
         # it'll raise an error
-        key = bytearray(key)
-        validate = bytearray(validate)
+        key = key.encode("ascii")
+        validate = validate.encode("ascii")
 
         # Add room for the header
         tmp_len = 20
@@ -280,7 +267,7 @@ class EncTypeX:
         rnd = ~int(time.time())
 
         for i in range(tmp_len):
-            rnd = (rnd * 0x343FD) + 0x269EC3
+            rnd = (rnd*0x343FD) + 0x269EC3
             data[i] = (rnd ^ key[i % keylen] ^ validate[i % vallen]) & 0xff
 
         header_len = 7
@@ -292,14 +279,20 @@ class EncTypeX:
         # The header of the data gets chopped off in init(), so save it
         header = data[:tmp_len]
         encxkey = bytearray([0] * 261)
-        data = self.init(encxkey, key, validate, data)
+
+        initData = self.init(encxkey, key, validate, data)
+
+        if initData is None:
+            return header
+
+        data = initData
         self.func6e(encxkey, data, len(data))
 
         # Reappend header that we saved earlier before returning to make
         # the complete buffer
         return header + data
 
-    def init(self, encxkey, key, validate, data):
+    def init(self, encxkey, key, validate, data: bytes) -> bytes | None:
         data_len = len(data)
 
         if data_len < 1:
@@ -313,13 +306,7 @@ class EncTypeX:
         if data_len < (header_len + data_start):
             return None
 
-        data = self.enctypex_funcx(
-            encxkey,
-            bytearray(key),
-            bytearray(validate),
-            data[header_len:],
-            data_start
-        )
+        data = self.enctypex_funcx(encxkey, bytearray(key), bytearray(validate), data[header_len:], data_start)
 
         return data[data_start:]
 

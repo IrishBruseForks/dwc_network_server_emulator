@@ -1,22 +1,23 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2016 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2016 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
@@ -73,11 +74,7 @@ def create_gamespy_message_from_dict(messages):
     cmd_val = messages.get("__cmd_val__", "")
 
     l = [("__cmd__", cmd), ("__cmd_val__", cmd_val)]
-    l.extend([
-        (key, value)
-        for key, value in messages.items()
-        if key not in (cmd, "__cmd__", "__cmd_val__")
-    ])
+    l.extend([(key, value) for key, value in list(messages.items()) if key not in (cmd, "__cmd__", "__cmd_val__")])
 
     return l
 
@@ -96,8 +93,7 @@ def create_gamespy_message_from_list(messages):
         elif message[0] == "__cmd_val__":
             cmd_val = str(message[1]).strip('\\')
         else:
-            query += "\\%s\\%s" % (str(message[0]).strip('\\'),
-                                   str(message[1]).strip('\\'))
+            query += "\\%s\\%s" % (str(message[0]).strip('\\'), str(message[1]).strip('\\'))
 
     if cmd:
         # Prepend the main command if one was found.

@@ -1,23 +1,24 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 polaris-
-    Copyright (C) 2014 ToadKing
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2014 msoucy
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 polaris-
+Copyright (C) 2014 ToadKing
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2014 msoucy
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
@@ -29,8 +30,8 @@ from twisted.internet.endpoints import serverFromString
 from twisted.protocols.basic import LineReceiver
 from twisted.internet import reactor
 from twisted.internet.error import ReactorAlreadyRunning
+from gamespy.gs_database import GamespyDatabase
 
-import gamespy.gs_database as gs_database
 import gamespy.gs_query as gs_query
 import gamespy.gs_utility as gs_utils
 import other.utils as utils
@@ -41,14 +42,12 @@ address = dwc_config.get_ip_port('GameSpyProfileServer')
 
 
 class GameSpyProfileServer(object):
+
     def __init__(self):
         pass
 
     def start(self):
-        endpoint = serverFromString(
-            reactor,
-            "tcp:%d:interface=%s" % (address[1], address[0])
-        )
+        endpoint = serverFromString(reactor, "tcp:%d:interface=%s" % (address[1], address[0]))
         conn = endpoint.listen(PlayerFactory())
 
         try:
@@ -59,15 +58,14 @@ class GameSpyProfileServer(object):
 
 
 class PlayerFactory(Factory):
+
     def __init__(self):
         """Player Factory.
 
         Instead of storing the sessions in the database, it might make more
         sense to store them in the PlayerFactory.
         """
-        logger.log(logging.INFO,
-                   "Now listening for connections on %s:%d...",
-                   address[0], address[1])
+        logger.log(logging.INFO, "Now listening for connections on %s:%d...", address[0], address[1])
         self.sessions = {}
 
     def buildProtocol(self, address):
@@ -75,10 +73,26 @@ class PlayerFactory(Factory):
 
 
 class PlayerSession(LineReceiver):
+    db: GamespyDatabase
+    sessions: str
+    address: str
+    remaining_message: str
+    remaining: str
+    profileid: str
+    gameid: str
+    buddies: str
+    blocked: str
+    status: str
+    statstring: str
+    locstring: str
+    keepalive: str
+    sesskey: str
+    sdkrevision: str
+
     def __init__(self, sessions, address):
         self.setRawMode()  # We're dealing with binary data so set to raw mode
 
-        self.db = gs_database.GamespyDatabase()
+        self.db = GamespyDatabase()
 
         self.sessions = sessions
         self.address = address
@@ -104,22 +118,14 @@ class PlayerSession(LineReceiver):
     def log(self, level, msg, *args, **kwargs):
         if not self.profileid:
             if not self.gameid:
-                logger.log(level, "[%s:%d] " + msg,
-                           self.address.host, self.address.port,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d] " + msg, self.address.host, self.address.port, *args, **kwargs)
             else:
-                logger.log(level, "[%s:%d | %s] " + msg,
-                           self.address.host, self.address.port, self.gameid,
-                           *args, **kwargs)
+                logger.log(level, "[%s:%d | %s] " + msg, self.address.host, self.address.port, self.gameid, *args, **kwargs)
         else:
             if not self.gameid:
-                logger.log(level, "[%s:%d | %d] " + msg,
-                           self.address.host, self.address.port,
-                           self.profileid, *args, **kwargs)
+                logger.log(level, "[%s:%d | %d] " + msg, self.address.host, self.address.port, self.profileid, *args, **kwargs)
             else:
-                logger.log(level, "[%s:%d | %d | %s] " + msg,
-                           self.address.host, self.address.port,
-                           self.profileid, self.gameid, *args, **kwargs)
+                logger.log(level, "[%s:%d | %d | %s] " + msg, self.address.host, self.address.port, self.profileid, self.gameid, *args, **kwargs)
 
     def get_ip_as_int(self, address):
         ipaddress = 0
@@ -134,17 +140,13 @@ class PlayerSession(LineReceiver):
         try:
             self.transport.setTcpKeepAlive(1)
 
-            self.log(logging.INFO,
-                     "Received connection from %s:%d",
-                     self.address.host, self.address.port)
+            self.log(logging.INFO, "Received connection from %s:%d", self.address.host, self.address.port)
 
             # Create new session id
             self.session = ""
 
             # Generate a random challenge string
-            self.challenge = utils.generate_random_str(
-                10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            )
+            self.challenge = utils.generate_random_str(10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
             # The first command sent to the client is always a login challenge
             # containing the server challenge key.
@@ -156,11 +158,9 @@ class PlayerSession(LineReceiver):
             ])
 
             self.log(logging.DEBUG, "SENDING: '%s'...", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
         except:
-            self.log(logging.ERROR,
-                     "Unknown exception: %s",
-                     traceback.format_exc())
+            self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def connectionLost(self, reason):
         try:
@@ -177,11 +177,9 @@ class PlayerSession(LineReceiver):
             self.db.delete_session(self.sesskey)
             self.log(logging.INFO, "Deleted session %s", self.session)
         except:
-            self.log(logging.ERROR,
-                     "Unknown exception: %s",
-                     traceback.format_exc())
+            self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
-    def rawDataReceived(self, data):
+    def rawDataReceived(self, data: bytes):
         try:
             self.log(logging.DEBUG, "RESPONSE: '%s'...", data)
 
@@ -190,20 +188,18 @@ class PlayerSession(LineReceiver):
             # stored in the variable remaining_message. On the next
             # rawDataReceived command, the remaining message and the data
             # are combined to create a full command.
-            data = self.remaining_message + data
+            msg = self.remaining_message + data.decode("ascii")
 
             # Check to make sure the data buffer starts with a valid command.
-            if len(data) > 0 and data[0] != '\\':
+            if len(msg) > 0 and msg[0] != '\\':
                 # There is data in the buffer but it doesn't start with a \ so
                 # there's no chance of it being valid. Look for the first
                 # instance of \final\ and remove everything before it. If
                 # \final\ is not in the command string then ignore it.
                 final = "\\final\\"
-                data = data[data.index(final) + len(final):] \
-                    if final in data else ""
+                msg = msg[msg.index(final) + len(final):] if final in msg else ""
 
-            commands, self.remaining_message = \
-                gs_query.parse_gamespy_message(data)
+            commands, self.remaining_message = gs_query.parse_gamespy_message(msg)
 
             cmds = {
                 "login": self.perform_login,
@@ -221,8 +217,7 @@ class PlayerSession(LineReceiver):
             def cmd_err(data_parsed):
                 # Maybe write unknown commands to a separate file later so
                 # new data can be collected more easily?
-                self.log(logging.ERROR,
-                         "Found unknown command, don't know how to handle"
+                self.log(logging.ERROR, "Found unknown command, don't know how to handle"
                          " '%s'.", data_parsed['__cmd__'])
 
             for data_parsed in commands:
@@ -230,13 +225,10 @@ class PlayerSession(LineReceiver):
                 self.log(logging.DEBUG, "%s", data_parsed)
                 cmds.get(data_parsed['__cmd__'], cmd_err)(data_parsed)
         except:
-            self.log(logging.ERROR,
-                     "Unknown exception: %s",
-                     traceback.format_exc())
+            self.log(logging.ERROR, "Unknown exception: %s", traceback.format_exc())
 
     def perform_login(self, data_parsed):
-        authtoken_parsed = gs_utils.parse_authtoken(data_parsed['authtoken'],
-                                                    self.db)
+        authtoken_parsed = gs_utils.parse_authtoken(data_parsed['authtoken'], self.db)
 
         if authtoken_parsed is None:
             self.log(logging.WARNING, "%s", "Invalid Authtoken.")
@@ -246,45 +238,29 @@ class PlayerSession(LineReceiver):
                 ('err', '266'),
                 ('fatal', ''),
                 ('errmsg', 'There was an error validating the'
-                           ' pre-authentication.'),
+                 ' pre-authentication.'),
                 ('id', data_parsed['id']),
             ])
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
             return
 
         if 'sdkrevision' in data_parsed:
             self.sdkrevision = data_parsed['sdkrevision']
 
         # Verify the client's response
-        valid_response = gs_utils.generate_response(
-            self.challenge,
-            authtoken_parsed['challenge'],
-            data_parsed['challenge'],
-            data_parsed['authtoken']
-        )
+        valid_response = gs_utils.generate_response(self.challenge, authtoken_parsed['challenge'], data_parsed['challenge'], data_parsed['authtoken'])
         if data_parsed['response'] != valid_response:
-            self.log(logging.ERROR,
-                     "ERROR: Got invalid response."
-                     " Got %s, expected %s",
-                     data_parsed['response'], valid_response)
+            self.log(logging.ERROR, "ERROR: Got invalid response."
+                     " Got %s, expected %s", data_parsed['response'], valid_response)
 
-        proof = gs_utils.generate_proof(
-            self.challenge,
-            authtoken_parsed['challenge'],
-            data_parsed['challenge'],
-            data_parsed['authtoken']
-        )
+        proof = gs_utils.generate_proof(self.challenge, authtoken_parsed['challenge'], data_parsed['challenge'], data_parsed['authtoken'])
 
-        userid, profileid, gsbrcd, uniquenick = \
-            gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed,
-                                                        self.db)
+        userid, profileid, gsbrcd, uniquenick = gs_utils.login_profile_via_parsed_authtoken(authtoken_parsed, self.db)
 
         if profileid is not None:
             # Successfully logged in or created account, continue
             # creating session.
-            loginticket = gs_utils.base64_encode(
-                utils.generate_random_str(16)
-            )
+            loginticket = gs_utils.base64_encode(utils.generate_random_str(16).encode("ascii"))
             self.sesskey = self.db.create_session(profileid, loginticket)
 
             self.sessions[profileid] = self
@@ -293,10 +269,9 @@ class PlayerSession(LineReceiver):
             self.blocked = self.db.get_blocked_list(self.profileid)
 
             if self.sdkrevision == "11":  # Used in Tatsunoko vs Capcom
+
                 def make_list(data):
-                    return [str(d['buddyProfileId'])
-                            for d in data
-                            if d['status'] == 1]
+                    return [str(d['buddyProfileId']) for d in data if d['status'] == 1]
 
                 block_list = make_list(self.blocked)
                 msg = gs_query.create_gamespy_message([
@@ -306,7 +281,7 @@ class PlayerSession(LineReceiver):
                 ])
 
                 self.log(logging.DEBUG, "SENDING: %s", msg)
-                self.transport.write(bytes(msg))
+                self.transport.write(msg.encode("ascii"))
 
                 buddy_list = make_list(self.buddies)
                 msg = gs_query.create_gamespy_message([
@@ -316,7 +291,7 @@ class PlayerSession(LineReceiver):
                 ])
 
                 self.log(logging.DEBUG, "SENDING: %s", msg)
-                self.transport.write(bytes(msg))
+                self.transport.write(msg.encode("ascii"))
 
             msg = gs_query.create_gamespy_message([
                 ('__cmd__', "lc"),
@@ -347,7 +322,7 @@ class PlayerSession(LineReceiver):
             self.profileid = int(profileid)
 
             self.log(logging.DEBUG, "SENDING: %s", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
             # Get pending messages.
             self.get_pending_messages()
@@ -373,12 +348,10 @@ class PlayerSession(LineReceiver):
                 ('id', data_parsed['id']),
             ])
             self.log(logging.DEBUG, "SENDING: %s", msg)
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
     def perform_logout(self, data_parsed):
-        self.log(logging.INFO,
-                 "Session %s has logged off",
-                 data_parsed['sesskey'])
+        self.log(logging.INFO, "Session %s has logged off", data_parsed['sesskey'])
         self.db.delete_session(data_parsed['sesskey'])
 
         if self.profileid in self.sessions:
@@ -427,11 +400,11 @@ class PlayerSession(LineReceiver):
         msg = gs_query.create_gamespy_message(msg_d)
 
         self.log(logging.DEBUG, "SENDING: %s", msg)
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_updatepro(self, data_parsed):
         """Wii example:
-        \updatepro\\sesskey\199714190\firstname\Wii:2555151656076614@WR9E
+        \\updatepro\\sesskey\199714190\firstname\Wii:2555151656076614@WR9E
         \partnerid\11\final\
 
         Remove any fields not related to what we should be updating.
@@ -456,11 +429,8 @@ class PlayerSession(LineReceiver):
     def perform_ka(self, data_parsed):
         self.keepalive = int(time.time())
 
-        msg = gs_query.create_gamespy_message([
-            ('__cmd__', "ka"),
-            ('__cmd_val__', ""),
-        ])
-        self.transport.write(msg)
+        msg = gs_query.create_gamespy_message([('__cmd__', "ka"), ('__cmd_val__', "")])
+        self.transport.write(msg.encode("ascii"))
 
     def perform_status(self, data_parsed):
         self.sesskey = data_parsed['sesskey']
@@ -508,13 +478,11 @@ class PlayerSession(LineReceiver):
                         ('__cmd__', "error"),
                         ('__cmd_val__', ""),
                         ('err', 2305),
-                        ('errmsg',
-                         "The profile the message was to be sent to is not"
+                        ('errmsg', "The profile the message was to be sent to is not"
                          " a buddy."),
                         ('id', 1),
                     ])
-                    logger.log(logging.DEBUG,
-                               "Trying to send message to someone who isn't"
+                    logger.log(logging.DEBUG, "Trying to send message to someone who isn't"
                                " a buddy: %s", msg)
                     self.transport.write(msg)
                     return
@@ -527,20 +495,14 @@ class PlayerSession(LineReceiver):
                 ])
 
                 if dest_profileid in self.sessions:
-                    self.log(logging.DEBUG,
-                             "SENDING TO %s:%s: %s",
-                             self.sessions[dest_profileid].address.host,
-                             self.sessions[dest_profileid].address.port, msg)
-                    self.sessions[dest_profileid].transport.write(bytes(msg))
+                    self.log(logging.DEBUG, "SENDING TO %s:%s: %s", self.sessions[dest_profileid].address.host, self.sessions[dest_profileid].address.port, msg)
+                    self.sessions[dest_profileid].transport.write(msg.encode("ascii"))
                     self.send_status_to_friends(dest_profileid)
                     self.get_status_from_friends(dest_profileid)
                 else:
                     if data_parsed['__cmd_val__'] == "1":
-                        self.log(logging.DEBUG,
-                                 "Saving message to %d: %s",
-                                 dest_profileid, msg)
-                        self.db.save_pending_message(self.profileid,
-                                                     dest_profileid, msg)
+                        self.log(logging.DEBUG, "Saving message to %d: %s", dest_profileid, msg)
+                        self.db.save_pending_message(self.profileid, dest_profileid, msg)
                     else:
                         msg = gs_query.create_gamespy_message([
                             ('__cmd__', "error"),
@@ -550,17 +512,14 @@ class PlayerSession(LineReceiver):
                              " is offline."),
                             ('id', 1),
                         ])
-                        logger.log(logging.DEBUG,
-                                   "Trying to send message to someone who"
+                        logger.log(logging.DEBUG, "Trying to send message to someone who"
                                    " isn't online: %s", msg)
                         self.transport.write(msg)
 
     def perform_addbuddy(self, data_parsed):
         newprofileid = int(data_parsed['newprofileid'])
         if newprofileid == self.profileid:
-            logger.log(logging.DEBUG,
-                       "Can't add self as friend: %d == %d",
-                       newprofileid, self.profileid)
+            logger.log(logging.DEBUG, "Can't add self as friend: %d == %d", newprofileid, self.profileid)
             return
 
         # Sample:
@@ -577,10 +536,8 @@ class PlayerSession(LineReceiver):
             self.db.add_buddy(self.profileid, newprofileid)
 
             if newprofileid in self.sessions:
-                logger.log(logging.DEBUG,
-                           "User is online, sending direct request from"
-                           " profile id %d to profile id %d...",
-                           self.profileid, newprofileid)
+                logger.log(logging.DEBUG, "User is online, sending direct request from"
+                           " profile id %d to profile id %d...", self.profileid, newprofileid)
 
                 # TODO: Add a way to check if a profile id is already a buddy
                 # using SQL
@@ -588,22 +545,17 @@ class PlayerSession(LineReceiver):
                 target_buddy_list = self.db.get_buddy_list(newprofileid)
                 logger.log(logging.DEBUG, "%s", target_buddy_list)
                 for buddy in target_buddy_list:
-                    if buddy['buddyProfileId'] == self.profileid and \
-                       not buddy['blocked']:
+                    if buddy['buddyProfileId'] == self.profileid and not buddy['blocked']:
                         other_player_authorized = True
                         break
 
                 if other_player_authorized:
-                    logger.log(logging.DEBUG,
-                               "Automatic authorization: %d (target) already"
-                               " has %d (source) as a friend.",
-                               newprofileid, self.profileid)
+                    logger.log(logging.DEBUG, "Automatic authorization: %d (target) already"
+                               " has %d (source) as a friend.", newprofileid, self.profileid)
 
                     # Force them both to add each other
-                    self.send_buddy_request(self.sessions[newprofileid],
-                                            self.profileid)
-                    self.send_buddy_request(self.sessions[self.profileid],
-                                            newprofileid)
+                    self.send_buddy_request(self.sessions[newprofileid], self.profileid)
+                    self.send_buddy_request(self.sessions[self.profileid], newprofileid)
 
                     self.send_bm4(newprofileid)
 
@@ -614,8 +566,7 @@ class PlayerSession(LineReceiver):
                     self.get_status_from_friends(newprofileid)
 
                 else:
-                    self.send_buddy_request(self.sessions[newprofileid],
-                                            self.profileid)
+                    self.send_buddy_request(self.sessions[newprofileid], self.profileid)
         else:
             # Trying to add someone who is already a friend.
             # Just send status updates.
@@ -634,7 +585,7 @@ class PlayerSession(LineReceiver):
             ('msg', ""),
         ])
 
-        self.transport.write(bytes(msg))
+        self.transport.write(msg.encode("ascii"))
 
     def perform_delbuddy(self, data_parsed):
         """Sample:
@@ -669,10 +620,7 @@ class PlayerSession(LineReceiver):
             # Going offline, don't need to send the other information.
             status_msg = "|s|%s|ss|%s" % (self.status, self.statstring)
         else:
-            status_msg = "|s|%s|ss|%s|ls|%s|ip|%d|p|0|qm|0" % (
-                self.status, self.statstring, self.locstring,
-                self.get_ip_as_int(self.address.host)
-            )
+            status_msg = "|s|%s|ss|%s|ls|%s|ip|%d|p|0|qm|0" % (self.status, self.statstring, self.locstring, self.get_ip_as_int(self.address.host))
 
         msg = gs_query.create_gamespy_message([
             ('__cmd__', "bm"),
@@ -683,7 +631,9 @@ class PlayerSession(LineReceiver):
 
         buddy_list = self.buddies
         if buddy_profileid is not None:
-            buddy_list = [{"buddyProfileId": buddy_profileid}]
+            buddy_list = [{
+                "buddyProfileId": buddy_profileid
+            }]
 
         for buddy in buddy_list:
             if buddy['buddyProfileId'] in self.sessions:
@@ -696,8 +646,7 @@ class PlayerSession(LineReceiver):
                 #          self.sessions[
                 #              buddy['buddyProfileId']
                 #          ].address.port, msg)
-                self.sessions[buddy['buddyProfileId']].transport \
-                                                      .write(bytes(msg))
+                self.sessions[buddy['buddyProfileId']].transport.write(msg.encode("ascii"))
 
     def get_status_from_friends(self, buddy_profileid=None):
         """This will be called when the player logs in.
@@ -710,21 +659,17 @@ class PlayerSession(LineReceiver):
 
         buddy_list = self.buddies
         if buddy_profileid is not None:
-            buddy_list = [{"buddyProfileId": buddy_profileid}]
+            buddy_list = [{
+                "buddyProfileId": buddy_profileid
+            }]
 
         for buddy in self.buddies:
             if buddy['status'] != 1:
                 continue
 
-            if buddy['buddyProfileId'] in self.sessions and \
-               self.sessions[buddy['buddyProfileId']].gameid == self.gameid:
-                status_msg = "|s|%s|ss|%s|ls|%s|ip|%d|p|0|qm|0" % (
-                    self.sessions[buddy['buddyProfileId']].status,
-                    self.sessions[buddy['buddyProfileId']].statstring,
-                    self.sessions[buddy['buddyProfileId']].locstring,
-                    self.get_ip_as_int(self.sessions[
-                        buddy['buddyProfileId']
-                    ].address.host))
+            if buddy['buddyProfileId'] in self.sessions and self.sessions[buddy['buddyProfileId']].gameid == self.gameid:
+                status_msg = "|s|%s|ss|%s|ls|%s|ip|%d|p|0|qm|0" % (self.sessions[buddy['buddyProfileId']].status, self.sessions[buddy['buddyProfileId']].statstring, self.sessions[buddy['buddyProfileId']].locstring,
+                                                                   self.get_ip_as_int(self.sessions[buddy['buddyProfileId']].address.host))
             else:
                 status_msg = "|s|0|ss|Offline"
 
@@ -735,7 +680,7 @@ class PlayerSession(LineReceiver):
                 ('msg', status_msg),
             ])
 
-            self.transport.write(bytes(msg))
+            self.transport.write(msg.encode("ascii"))
 
     def get_buddy_authorized(self):
         buddies = self.db.buddy_need_auth_message(self.profileid)
@@ -749,9 +694,8 @@ class PlayerSession(LineReceiver):
                  " your list"),
             ])
 
-            self.transport.write(bytes(msg))
-            self.db.buddy_sent_auth_message(buddy['userProfileId'],
-                                            buddy['buddyProfileId'])
+            self.transport.write(msg.encode("ascii"))
+            self.db.buddy_sent_auth_message(buddy['userProfileId'], buddy['buddyProfileId'])
 
     def get_buddy_requests(self):
         """Get list people who have added the user but haven't been accepted
@@ -759,9 +703,7 @@ class PlayerSession(LineReceiver):
         buddies = self.db.get_pending_buddy_requests(self.profileid)
 
         for buddy in buddies:
-            self.send_buddy_request(self,
-                                    buddy['userProfileId'],
-                                    buddy['time'])
+            self.send_buddy_request(self, buddy['userProfileId'], buddy['time'])
 
     def send_buddy_request(self, session, profileid, senttime=None):
         sig = utils.generate_random_hex_str(32)
@@ -779,7 +721,7 @@ class PlayerSession(LineReceiver):
             ('msg', msg),
         ])
 
-        session.transport.write(bytes(msg))
+        session.transport.write(msg.encode("ascii"))
 
     def get_pending_messages(self):
         messages = self.db.get_pending_messages(self.profileid)
@@ -787,9 +729,9 @@ class PlayerSession(LineReceiver):
         for message in messages:
             if message['sourceid'] not in self.blocked:
                 try:
-                    self.transport.write(bytes(message['msg']))
+                    self.transport.write(message['msg'].encode("ascii"))
                 except:
-                    self.transport.write(bytes(message['msg'], "utf-8"))
+                    self.transport.write(message['msg'].encode("utf-8"))
 
 
 if __name__ == "__main__":

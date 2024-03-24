@@ -1,22 +1,23 @@
-"""DWC Network Server Emulator
+"""
+DWC Network Server Emulator
 
-    Copyright (C) 2014 SMTDDR
-    Copyright (C) 2014 kyle95wm
-    Copyright (C) 2014 AdmiralCurtiss
-    Copyright (C) 2015 Sepalani
+Copyright (C) 2014 SMTDDR
+Copyright (C) 2014 kyle95wm
+Copyright (C) 2014 AdmiralCurtiss
+Copyright (C) 2015 Sepalani
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from twisted.web import server, resource
@@ -72,17 +73,12 @@ class RegPage(resource.Resource):
         macadr = request.args['macadr'][0].strip()
         actiontype = request.args['action'][0]
         macadr = macadr.lower()
-        if not re.match("[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
-                        macadr):
+        if not re.match("[0-9a-f]{2}([-:])[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", macadr):
             request.setResponseCode(500)
-            return "The MAC you entered was invalid." \
-                   "Please click the back button and try again!"
+            return "The MAC you entered was invalid." "Please click the back button and try again!"
         macadr = macadr.replace(":", "").replace("-", "")
         if actiontype == 'add':
-            dbconn.cursor().execute(
-                'INSERT INTO pending VALUES(?)',
-                (macadr,)
-            )
+            dbconn.cursor().execute('INSERT INTO pending VALUES(?)', (macadr, ))
             responsedata = "Added %s to pending list." % (macadr)
             responsedata += "Please close this window now."
             " It's also not a bad idea to check back on the status of your"
@@ -131,12 +127,11 @@ class RegPage(resource.Resource):
 
 
 class RegPageServer(object):
+
     def start(self):
         site = server.Site(RegPage(self))
         reactor.listenTCP(port, site)
-        logger.log(logging.INFO,
-                   "Now listening for connections on port %d...",
-                   port)
+        logger.log(logging.INFO, "Now listening for connections on port %d...", port)
         try:
             if not reactor.running:
                 reactor.run(installSignalHandlers=0)
